@@ -24,37 +24,37 @@ void loggerf (const char *format, ...)
 
   va_start(args, format);
   length = vsnprintf(logger_buffer + logger.pfxlen, LOGGER_BUFFER_SIZE, format, args);
-	if (length > 0)
-	{
-		if (length > LOGGER_BUFFER_SIZE)
-			length = LOGGER_BUFFER_SIZE;
-	}
-	else
-	{
-		loggerf("logger encoding error '%s'", format);
-		length = (int)strlen(logger_buffer);
-	}
-	length += (int)logger.pfxlen;
-	if (logger.callback)
-		logger.callback(logger_buffer, logger.context);
+  if (length > 0)
+  {
+    if (length > LOGGER_BUFFER_SIZE)
+      length = LOGGER_BUFFER_SIZE;
+  }
   else
-		printf("\n%s\n", logger_buffer);
-	va_end(args);
+  {
+    loggerf("logger encoding error '%s'", format);
+    length = (int)strlen(logger_buffer);
+  }
+  length += (int)logger.pfxlen;
+  if (logger.callback)
+    logger.callback(logger_buffer, logger.context);
+  else
+    printf("\n%s\n", logger_buffer);
+  va_end(args);
 }
 
 void logger_callback (logger_function callback, void *context)
 {
-	logger.callback = callback;
-	logger.context = context;
+  logger.callback = callback;
+  logger.context = context;
 }
 
 int logger_prefix (const char *prefix)
 {
-	size_t pfxlen;
-	pfxlen = strlen(prefix);
-	if (pfxlen > LOGGER_PREFIX_SIZE)
-		return 0;
-	memcpy(logger_buffer, prefix, pfxlen);
-	logger.pfxlen = pfxlen;
-	return 1;
+  size_t pfxlen;
+  pfxlen = strlen(prefix);
+  if (pfxlen > LOGGER_PREFIX_SIZE)
+    return 0;
+  memcpy(logger_buffer, prefix, pfxlen);
+  logger.pfxlen = pfxlen;
+  return 1;
 }

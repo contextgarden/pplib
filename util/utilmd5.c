@@ -59,7 +59,7 @@
 #include "utilmd5.h"
 #include <string.h>
 
-#undef BYTE_ORDER	/* 1 = big-endian, -1 = little-endian, 0 = unknown */
+#undef BYTE_ORDER /* 1 = big-endian, -1 = little-endian, 0 = unknown */
 #ifdef ARCH_IS_BIG_ENDIAN
 #  define BYTE_ORDER (ARCH_IS_BIG_ENDIAN ? 1 : -1)
 #else
@@ -159,7 +159,7 @@ static void md5_process(md5_state_t *pms, const uint8_t *data /*[64]*/)
 
     if (*((const uint8_t *)&w)) /* dynamic little-endian */
 #endif
-#if BYTE_ORDER <= 0		/* little-endian */
+#if BYTE_ORDER <= 0   /* little-endian */
     {
       /*
        * On little-endian machines, we can process properly aligned
@@ -176,9 +176,9 @@ static void md5_process(md5_state_t *pms, const uint8_t *data /*[64]*/)
     }
 #endif
 #if BYTE_ORDER == 0
-    else			/* dynamic big-endian */
+    else      /* dynamic big-endian */
 #endif
-#if BYTE_ORDER >= 0		/* big-endian */
+#if BYTE_ORDER >= 0   /* big-endian */
     {
       /*
        * On big-endian machines, we must arrange the bytes in the
@@ -187,9 +187,9 @@ static void md5_process(md5_state_t *pms, const uint8_t *data /*[64]*/)
       const uint8_t *xp = data;
       int i;
 #  if BYTE_ORDER == 0
-      X = xbuf;		/* (dynamic only) */
+      X = xbuf;   /* (dynamic only) */
 #  else
-#    define xbuf X		/* (static only) */
+#    define xbuf X    /* (static only) */
 #  endif
       for (i = 0; i < 16; ++i, xp += 4)
         xbuf[i] = xp[0] + (xp[1] << 8) + (xp[2] << 16) + (xp[3] << 24);

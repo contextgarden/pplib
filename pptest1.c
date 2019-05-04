@@ -16,18 +16,18 @@ static const char * sizenum (size_t s)
 
 static const char * crypt_info (ppdoc *pdf)
 {
-	switch (ppdoc_crypt_status(pdf))
-	{
-		case PPCRYPT_NONE:
-			return "none";
-		case PPCRYPT_DONE:
-			return "empty password";
-		case PPCRYPT_PASS:
-			return "nonempty password";
-		default:
-			break;
-	}
-	return "this shouldn't happen";
+  switch (ppdoc_crypt_status(pdf))
+  {
+    case PPCRYPT_NONE:
+      return "none";
+    case PPCRYPT_DONE:
+      return "empty password";
+    case PPCRYPT_PASS:
+      return "nonempty password";
+    default:
+      break;
+  }
+  return "this shouldn't happen";
 }
 
 static void print_info (ppdoc *pdf)
@@ -55,9 +55,9 @@ static void print_info (ppdoc *pdf)
 
 static int usage (const char *argv0)
 {
-	printf("pplib " pplib_version ", " pplib_author "\n");
-	printf("usage: %s file1.pdf file2.pdf ...\n", argv0);
-	return 0;
+  printf("pplib " pplib_version ", " pplib_author "\n");
+  printf("usage: %s file1.pdf file2.pdf ...\n", argv0);
+  return 0;
 }
 
 int main (int argc, const char **argv)

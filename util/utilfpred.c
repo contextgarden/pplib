@@ -65,7 +65,7 @@ struct predictor_state {
   int compbits;                               /* number of bits per component (/DecodeParms << /BitsPerComponent ... >>) */
   int components;                             /* number of components (/DecodeParms << /Colors ... >>) */
   uint8_t *buffer;                            /* temporary private buffer area */
-  uint8_t *rowin;                             /* an input row buffer position */	
+  uint8_t *rowin;                             /* an input row buffer position */
   int rowsize;                                /* size of a current scanline in bytes (rounded up) */
   int rowend;                                 /* an input buffer end position */
   int rowindex;                               /* an output buffer position */
@@ -137,7 +137,7 @@ predictor_state * predictor_decoder_init (predictor_state *state, int predictor,
     buffersize = rowsize * sizeof(uint8_t);
     buffer = (uint8_t *)util_calloc(buffersize, 1);
     if ((size_t)state->pixbufsize > sizeof(state->compbuffer)) // components > MAX_COMPONENTS
-    	state->prevcomp = (predictor_component_t *)util_calloc(state->pixbufsize, 1);
+      state->prevcomp = (predictor_component_t *)util_calloc(state->pixbufsize, 1);
     else
       state->prevcomp = state->compbuffer;
     // &state->prevcomp == &state->prevpixel

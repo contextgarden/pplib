@@ -1092,14 +1092,14 @@ void aes_test (void)
   size_t inpsize, outsize;
   int flags = AES_NULL_PADDING;
 
-	////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
 
 //#define ENCODETO output
 #define ENCODETO input // inplace
 
   inpsize = 64;
   memcpy(input, inp, inpsize);
-	show(input, inpsize, '>', '>');
+  show(input, inpsize, '>', '>');
   outsize = aes_encode_data(input, inpsize, ENCODETO, key, 16, iv, flags);
   show(ENCODETO, outsize, '<', '<');
   if (outsize == inpsize && memcmp(ENCODETO, out, outsize) == 0)
@@ -1107,7 +1107,7 @@ void aes_test (void)
   else
     printf("ENCODER FAILURE\n");
 
-	////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
 
 //#define DECODETO input
 #define DECODETO output // in place
@@ -1115,7 +1115,7 @@ void aes_test (void)
   outsize = 64;
   memcpy(output, out, outsize);
   show(output, outsize, '<', '<');
-	inpsize = aes_decode_data(output, outsize, DECODETO, key, 16, iv, flags);
+  inpsize = aes_decode_data(output, outsize, DECODETO, key, 16, iv, flags);
   show(DECODETO, inpsize, '>', '>');
   if (inpsize == outsize && memcmp(DECODETO, inp, inpsize) == 0)
     printf("DECODER SUCCESS\n");

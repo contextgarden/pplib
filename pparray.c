@@ -3,8 +3,8 @@
 
 pparray * pparray_create (const ppobj *stackpos, size_t size, ppheap **pheap)
 {
-	pparray *array;
-	ppobj *data;
+  pparray *array;
+  ppobj *data;
   array = (pparray *)ppheap_take(pheap, sizeof(pparray) + size * sizeof(ppobj));
   array->size = size;
   array->data = data = (ppobj *)(array + 1);

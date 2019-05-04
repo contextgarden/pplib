@@ -18,13 +18,13 @@ const char * ppobj_kind[] = { "none", "null", "bool", "integer", "number", "name
 
 static const char * ppref_str (ppuint refnumber, ppuint refversion)
 {
-	static char buffer[MAX_INT_DIGITS + 1 + MAX_INT_DIGITS + 1 + 1 + 1];
+  static char buffer[MAX_INT_DIGITS + 1 + MAX_INT_DIGITS + 1 + 1 + 1];
 #if defined(MSVC64)|| defined(MINGW64)
-	sprintf(buffer, PPUINTF " " PPUINTF " R", refnumber, refversion);
+  sprintf(buffer, PPUINTF " " PPUINTF " R", refnumber, refversion);
 #else
-	sprintf(buffer, PPUINTF " " PPUINTF " R", (unsigned long)(refnumber), (unsigned long)(refversion));
+  sprintf(buffer, PPUINTF " " PPUINTF " R", (unsigned long)(refnumber), (unsigned long)(refversion));
 #endif
-	return buffer;
+  return buffer;
 }
 
 /* name */
@@ -64,7 +64,7 @@ const char ppname_byte_lookup[] = {
 #define ppname_flush_with_ego(O, ghost, siz, flgs) \
   (iof_put(O, '\0'), \
    pad=(O->pos - pos_begin)%(sizeof(ppname*)), \
-   iof_ensure(O, pad+sizeof(ppname *)),		\
+   iof_ensure(O, pad+sizeof(ppname *)),   \
    O->pos += sizeof(ppname *), \
    O->pos += pad, \
    ghost = (_ppname *)ppheap_flush(O, &siz), \
@@ -86,7 +86,7 @@ const char ppname_byte_lookup[] = {
 #define ppname_set_alter_ego(name, ghost, ego) do{ \
   size_t t = ((ghost)->size + 1); \
   t = (t%sizeof(ppname *))==0?t: (t/sizeof(ppname *)+1)*sizeof(ppname *); \
-  (*((ppname *)(name + t)) = ego);		       \
+  (*((ppname *)(name + t)) = ego);           \
 }while(0)
 #else
 #define ppname_set_alter_ego(name, ghost, ego) (*((ppname *)(name + (ghost)->size + 1)) = ego)
@@ -239,7 +239,7 @@ ppname ppname_encoded (ppname name)
 #define ppstring_flush_with_ego(O, ghost, siz, flgs) \
   (iof_put(O, '\0'), \
    pad=(O->pos - pos_begin)%(sizeof(ppstring*)), \
-   iof_ensure(O, pad+sizeof(ppstring *)),		\
+   iof_ensure(O, pad+sizeof(ppstring *)),   \
    O->pos += sizeof(ppstring *), \
    O->pos += pad, \
    ghost = (_ppstring *)ppheap_flush(O, &siz), \
@@ -247,9 +247,9 @@ ppname ppname_encoded (ppname name)
    ghost->size = siz - sizeof(_ppstring) - 1 - pad - sizeof(ppstring *), \
   (ppstring)(ghost + 1))
 #else
-#define ppstring_flush_with_ego(O, ghost, siz, flgs)	\
+#define ppstring_flush_with_ego(O, ghost, siz, flgs)  \
   (iof_put(O, '\0'), \
-   iof_ensure(O, sizeof(ppstring *)),		\
+   iof_ensure(O, sizeof(ppstring *)),   \
    O->pos += sizeof(ppstring *), \
    ghost = (_ppstring *)ppheap_flush(O, &siz), \
    ghost->flags = flgs, \
@@ -274,7 +274,7 @@ ppname ppname_encoded (ppname name)
 #define ppstring_set_alter_ego(string, ghost, ego) do{ \
   size_t t = ((ghost)->size + 1); \
   t = (t%sizeof(ppstring *))==0?t: (t/sizeof(ppstring *)+1)*sizeof(ppstring *); \
-  (*((ppstring *)(string + t)) = ego);		       \
+  (*((ppstring *)(string + t)) = ego);           \
 }while(0)
 #else
 #define ppstring_set_alter_ego(string, ghost, ego) (*((ppstring *)((string + (ghost)->size + 1))) = ego)
@@ -1950,7 +1950,7 @@ static void ppdoc_load_entries (ppdoc *pdf)
     ++pref;
     ++offindex;
     if (ref->object.type != PPNONE) // might be preloaded already (/Encrypt dict, stream filter dicts, stream /Length..)
-    	continue;
+      continue;
     if (offindex < objects)
       ref->length = (*pref)->offset - ref->offset;
     else
@@ -2269,10 +2269,10 @@ ppdoc * ppdoc_load (const char *filename)
 
 ppdoc * ppdoc_mem (const void *data, size_t size)
 {
-	iof_file input;
-	iof_file_rdata_init(&input, data, size);
-	input.flags |= IOF_BUFFER_ALLOC; // todo: 3 modes: borrow, take over, copy?
-	return ppdoc_create(&input);
+  iof_file input;
+  iof_file_rdata_init(&input, data, size);
+  input.flags |= IOF_BUFFER_ALLOC; // todo: 3 modes: borrow, take over, copy?
+  return ppdoc_create(&input);
 }
 
 void ppdoc_free (ppdoc *pdf)
@@ -2705,12 +2705,12 @@ ppmatrix * ppdict_get_matrix (ppdict *dict, const char *name, ppmatrix *matrix)
 
 void pplog_callback (pplogger_callback logger, void *alien)
 {
-	logger_callback((logger_function)logger, alien);
+  logger_callback((logger_function)logger, alien);
 }
 
 int pplog_prefix (const char *prefix)
 {
-	return logger_prefix(prefix);
+  return logger_prefix(prefix);
 }
 
 /* version */

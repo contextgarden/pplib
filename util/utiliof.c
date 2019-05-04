@@ -290,7 +290,7 @@ void iof_file_free (iof_file *iofile)
   else if ((file = iof_file_get_fh(iofile)) != NULL)
   {
     if (iofile->flags & IOF_CLOSE_FILE)
-     	fclose(file);
+      fclose(file);
     iof_file_set_fh(iofile, NULL);
   }
   iof_file_set_name(iofile, NULL);
@@ -325,8 +325,8 @@ void iof_file_close_input (iof_file *iofile)
   }
   else if ((file = iof_file_get_fh(iofile)) != NULL)
   {
-  	iof_file_set_fh(iofile, NULL);
-  	fclose(file);
+    iof_file_set_fh(iofile, NULL);
+    fclose(file);
   }
   iof_file_set_name(iofile, NULL);
   /* now make it a dummy string iofile */
@@ -1920,7 +1920,7 @@ size_t iof_result_to_file_handle (iof *F, FILE *file)
   const void *data;
   size_t size;
   data = iof_result(F, size);
-	return iof_data_to_file_handle(data, size, file);
+  return iof_data_to_file_handle(data, size, file);
 }
 
 size_t iof_result_to_file (iof *F, const char *filename)
@@ -2650,7 +2650,7 @@ iof * iof_filter_buffer_writer (size_t size)
     O->flags |= IOF_BUFFER_ALLOC;
     return O;
   }
-	return iof_filter_writer(iof_mem_handler, 0, &dummy);
+  return iof_filter_writer(iof_mem_handler, 0, &dummy);
 }
 
 /* stream */

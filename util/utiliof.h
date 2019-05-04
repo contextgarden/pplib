@@ -37,8 +37,8 @@ typedef struct iof_file {
   union {
     FILE *iofh; // access via iof_file_get_fh / iof_file_set_fh (below)
     union {
-    	struct { uint8_t *buf, *pos, *end; };
-    	struct { const uint8_t *rbuf, *rpos, *rend; }; // to trick compiler warnings about cast discarding const
+      struct { uint8_t *buf, *pos, *end; };
+      struct { const uint8_t *rbuf, *rpos, *rend; }; // to trick compiler warnings about cast discarding const
     };
   };
   size_t *offset;
@@ -194,7 +194,7 @@ mode must be aware of some not yet read data, but treat it necessary only if IOF
 Parsers using iof input may protect not yet read data when there may be a need to put bytes
 back to the stream. This is trivial when I->pos > I->buf, as we can make a move by --I->pos.
 But when there is a need to put back more then one byte, we can protect the data tail, so that
-realoder will rewrite it to the beginning of new data chunk. 
+realoder will rewrite it to the beginning of new data chunk.
 
   iof_tail(I) - internal, used by iof handlers at IOFREAD mode
   iof_protect_tail(I) - used by parsers to ensure some bytes chunk in one piece

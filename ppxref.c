@@ -165,24 +165,24 @@ ppdict * ppxref_trailer (ppxref *xref)
 
 ppxref * ppdoc_xref (ppdoc *pdf)
 {
-	return pdf->xref;
+  return pdf->xref;
 }
 
 ppxref * ppxref_prev (ppxref *xref)
 {
-	return xref->prev;
+  return xref->prev;
 }
 
 ppdict * ppxref_catalog (ppxref *xref)
 {
-	ppdict *trailer;
-	return (trailer = ppxref_trailer(xref)) != NULL ? ppdict_rget_dict(trailer, "Root") : NULL;
+  ppdict *trailer;
+  return (trailer = ppxref_trailer(xref)) != NULL ? ppdict_rget_dict(trailer, "Root") : NULL;
 }
 
 ppdict * ppxref_info (ppxref *xref)
 {
-	ppdict *trailer;
-	return (trailer = ppxref_trailer(xref)) != NULL ? ppdict_rget_dict(trailer, "Info") : NULL;
+  ppdict *trailer;
+  return (trailer = ppxref_trailer(xref)) != NULL ? ppdict_rget_dict(trailer, "Info") : NULL;
 }
 
 ppref * ppxref_pages (ppxref *xref)

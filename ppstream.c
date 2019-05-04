@@ -4,22 +4,22 @@
 
 ppstream * ppstream_create (ppdoc *pdf, ppdict *dict, size_t offset)
 {
-	ppstream *stream;
-	stream = (ppstream *)ppheap_take(&pdf->heap, sizeof(ppstream));
-	stream->dict = dict;
-	stream->offset = offset;
-	//if (!ppdict_rget_uint(dict, "Length", &stream->length)) // may be indirect pointing PPNONE at this moment
-	//  stream->length = 0;
-	stream->length = 0;
-	stream->filespec = NULL;
-	stream->filter.filters = NULL;
-	stream->filter.params = NULL;
-	stream->filter.count = 0;
-	stream->input = &pdf->input;
-	stream->I = NULL;
-	stream->cryptkey = NULL;
-	stream->flags = 0;
-	return stream;
+  ppstream *stream;
+  stream = (ppstream *)ppheap_take(&pdf->heap, sizeof(ppstream));
+  stream->dict = dict;
+  stream->offset = offset;
+  //if (!ppdict_rget_uint(dict, "Length", &stream->length)) // may be indirect pointing PPNONE at this moment
+  //  stream->length = 0;
+  stream->length = 0;
+  stream->filespec = NULL;
+  stream->filter.filters = NULL;
+  stream->filter.params = NULL;
+  stream->filter.count = 0;
+  stream->input = &pdf->input;
+  stream->I = NULL;
+  stream->cryptkey = NULL;
+  stream->flags = 0;
+  return stream;
 }
 
 static iof * ppstream_predictor (ppdict *params, iof *N)
@@ -480,10 +480,10 @@ void ppstream_filter_info (ppstream *stream, ppstream_filter *info, int decode)
 
 void ppstream_init_buffers (void)
 {
-	iof_filters_init();
+  iof_filters_init();
 }
 
 void ppstream_free_buffers (void)
 {
-	iof_filters_free();
+  iof_filters_free();
 }

@@ -1074,8 +1074,8 @@ static char number_buffer[512];
 #define ieee_copy_special_string_re(special, p, _p, r, e) \
   for (p = (char *)number_buffer, _p = special; ; ++p, ++_p) { \
     if ((*p = *_p) == '\0') { \
-    	if (r != NULL) *r = NULL; \
-    	if (e != NULL) *e = p; \
+      if (r != NULL) *r = NULL; \
+      if (e != NULL) *e = p; \
       break; \
     } \
   }

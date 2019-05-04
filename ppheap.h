@@ -11,10 +11,10 @@
 
 typedef struct ppheap ppheap;
 struct ppheap {
-	size_t size;
-	size_t space;
-	uint8_t *data;
-	ppheap *prev;
+  size_t size;
+  size_t space;
+  uint8_t *data;
+  ppheap *prev;
 };
 
 ppheap * ppheap_new (void);

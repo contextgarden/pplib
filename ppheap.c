@@ -15,8 +15,8 @@
 #if defined(__sun) && defined(__SVR4)
 # define PPHEAP_NEED_ALIGNMENT
 #endif
- 
-#ifdef PPHEAP_NEED_ALIGNMENT 
+
+#ifdef PPHEAP_NEED_ALIGNMENT
 /* Tests has shown that long double seems to work: */
 /* for 32bit aligned_data has  algn: 64 as ppxref and ppref, */
 /* the other algns divide algn: 64, so it's ok.*/
@@ -94,11 +94,11 @@ typedef long double aligned_data;
 
 
 #define ALIGN_BUFF_BUCKET_SIZE  0x3000 /* heuristic value, found by running few tests */
-#ifdef __SIZEOF_POINTER__ 
-#define SIZE_OF_POINTER  __SIZEOF_POINTER__ 
+#ifdef __SIZEOF_POINTER__
+#define SIZE_OF_POINTER  __SIZEOF_POINTER__
 #else
 #define SIZE_OF_POINTER  (sizeof(void *))
-#endif 
+#endif
 
 typedef struct _simplereg {
   size_t bucket_pos;
@@ -108,7 +108,7 @@ typedef struct _simplereg {
 } simplereg;
 
 /* By default static vars are initialized to  NULL, but to be clear.. */
-static simplereg *align_set = NULL ; 
+static simplereg *align_set = NULL ;
 
 static void align_init_set(void){
    size_t size ;
@@ -118,7 +118,7 @@ static void align_init_set(void){
      return ;
    }
 
-   align_set = malloc(sizeof(simplereg)); 
+   align_set = malloc(sizeof(simplereg));
    if (!align_set) {
          fprintf(stderr,"! fatal error: unable to setup master register for  aligned pointers\n");
          exit(EXIT_FAILURE);
@@ -140,7 +140,7 @@ static void align_init_set(void){
 static void align_save_into_set(aligned_data *p){
    if (align_set->bucket_pos >= align_set->bucket_size) {
      size_t new_size;
-     aligned_data **align_data_set_new; 
+     aligned_data **align_data_set_new;
 
      if(!align_set->align_data_set){
          fprintf(stderr,"! fatal error: unable to save aligned pointer,corrupted set\n");
@@ -162,7 +162,7 @@ static void align_save_into_set(aligned_data *p){
      fprintf(stderr,"! fatal error: unable to save aligned pointer, wrong position\n");
      exit(EXIT_FAILURE);
    }
-   align_set->align_data_set[align_set->bucket_pos] = p ; 
+   align_set->align_data_set[align_set->bucket_pos] = p ;
    align_set->bucket_pos++;
 
 }
@@ -175,14 +175,14 @@ static void align_free_set(void){
       align_set->heap_instance--;
     } else if (align_set->heap_instance ==1) {
       if (align_set->align_data_set){
-	size_t p;
-	for(p=1;p<align_set->bucket_pos;p++){
-	  if (align_set->align_data_set[p]) {
-	    free(align_set->align_data_set[p]);
-	  }
-	}
-	free(align_set->align_data_set);
-	align_set->align_data_set = NULL;
+  size_t p;
+  for(p=1;p<align_set->bucket_pos;p++){
+    if (align_set->align_data_set[p]) {
+      free(align_set->align_data_set[p]);
+    }
+  }
+  free(align_set->align_data_set);
+  align_set->align_data_set = NULL;
       }
       align_set->heap_instance=0;
       free(align_set);
@@ -196,20 +196,20 @@ static void align_free_set(void){
 
 static ppheap * ppheap_create (size_t size)
 {
-	ppheap *heap;
-	heap = (ppheap *)pp_malloc(sizeof(ppheap) + size * sizeof(uint8_t));
-	heap->size = size;
-	heap->space = size;
-	heap->data = ppheap_head(heap);
-	heap->prev = NULL;
-	return heap;
+  ppheap *heap;
+  heap = (ppheap *)pp_malloc(sizeof(ppheap) + size * sizeof(uint8_t));
+  heap->size = size;
+  heap->space = size;
+  heap->data = ppheap_head(heap);
+  heap->prev = NULL;
+  return heap;
 }
 
 ppheap * ppheap_new (void)
 {
 #ifdef PPHEAP_NEED_ALIGNMENT
         align_init_set();
-#endif  
+#endif
         return ppheap_create(PPHEAP_BUFFER);
 }
 
@@ -224,7 +224,7 @@ void ppheap_free (ppheap *heap)
   } while (heap != NULL);
 #ifdef PPHEAP_NEED_ALIGNMENT
     align_free_set();
-#endif  
+#endif
 
 }
 
@@ -260,34 +260,34 @@ static ppheap * ppheap_insert_sub (ppheap **pheap, size_t size)
 
 void * ppheap_take (ppheap **pheap, size_t size)
 {
-	ppheap *heap;
-	uint8_t *data;
+  ppheap *heap;
+  uint8_t *data;
 #ifdef PPHEAP_NEED_ALIGNMENT
-	aligned_data *p_aligned_data;
-#endif  
-	heap = *pheap;
-	if (size <= heap->size)
-	  ;
-	else if (heap->size <= PPHEAP_WASTE && size <= (PPHEAP_BUFFER >> 1))
-	  heap = ppheap_insert_top(pheap, PPHEAP_BUFFER);
-	else
+  aligned_data *p_aligned_data;
+#endif
+  heap = *pheap;
+  if (size <= heap->size)
+    ;
+  else if (heap->size <= PPHEAP_WASTE && size <= (PPHEAP_BUFFER >> 1))
+    heap = ppheap_insert_top(pheap, PPHEAP_BUFFER);
+  else
         heap = ppheap_insert_sub(pheap, size);
- 	data = heap->data;
- 	heap->data += size;
- 	heap->size -= size;
+  data = heap->data;
+  heap->data += size;
+  heap->size -= size;
 #ifdef PPHEAP_NEED_ALIGNMENT
-	/* Todo: only if data%sizeof(aligned_data) != 0 */
-	p_aligned_data = malloc(size);
-	if (!p_aligned_data) {
+  /* Todo: only if data%sizeof(aligned_data) != 0 */
+  p_aligned_data = malloc(size);
+  if (!p_aligned_data) {
          fprintf(stderr,"! fatal error: unable to setup aligned pointer for ppheap_take\n");
          exit(EXIT_FAILURE);
-	}
-	memcpy(p_aligned_data,data,size);
-	align_save_into_set(p_aligned_data);
-	return (void *)p_aligned_data;
+  }
+  memcpy(p_aligned_data,data,size);
+  align_save_into_set(p_aligned_data);
+  return (void *)p_aligned_data;
 #else
- 	return (void *)data;
-#endif  
+  return (void *)data;
+#endif
 
 }
 
@@ -400,7 +400,7 @@ void * ppheap_flush (iof *O, size_t *psize) // not from explicit ppheap ** !!!
   size_t size;
 #ifdef PPHEAP_NEED_ALIGNMENT
   aligned_data *p_aligned_data;
-#endif  
+#endif
   heap = *((ppheap **)(O->link));
   *psize = ppheap_buffer_size(O, heap);
   size = *psize;
@@ -426,7 +426,7 @@ void * ppheap_flush (iof *O, size_t *psize) // not from explicit ppheap ** !!!
 #else
   return data;
 
-#endif  
+#endif
 
 
 }

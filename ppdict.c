@@ -3,25 +3,25 @@
 
 ppdict * ppdict_create (const ppobj *stackpos, size_t size, ppheap **pheap)
 {
-	ppdict *dict;
-	ppobj *data;
-	ppname *pkey;
-	size_t i;
-	size >>= 1;
-	dict = (ppdict *)ppheap_take(pheap, sizeof(ppdict) + size * sizeof(ppobj) + (size + 1) * sizeof(ppname *)); // ? + size * sizeof(ppdict_map_node)
-	dict->size = 0;
-	dict->data = data = (ppobj *)(dict + 1);
-	dict->keys = pkey = (ppname *)(dict->data + size);
-	for (i = 0; i < size; ++i, stackpos += 2)
-	{
-	  if (stackpos->type != PPNAME) // we need this check at lest for trailer hack
-	    continue;
+  ppdict *dict;
+  ppobj *data;
+  ppname *pkey;
+  size_t i;
+  size >>= 1;
+  dict = (ppdict *)ppheap_take(pheap, sizeof(ppdict) + size * sizeof(ppobj) + (size + 1) * sizeof(ppname *)); // ? + size * sizeof(ppdict_map_node)
+  dict->size = 0;
+  dict->data = data = (ppobj *)(dict + 1);
+  dict->keys = pkey = (ppname *)(dict->data + size);
+  for (i = 0; i < size; ++i, stackpos += 2)
+  {
+    if (stackpos->type != PPNAME) // we need this check at lest for trailer hack
+      continue;
     *pkey = stackpos->name;
     *data = *(stackpos + 1);
     ++pkey, ++data, ++dict->size;
-	}
-	*pkey = NULL; // sentinel for convinient iteration
-	return dict;
+  }
+  *pkey = NULL; // sentinel for convinient iteration
+  return dict;
 }
 
 ppobj * ppdict_get_obj (ppdict *dict, const char *name)
@@ -36,7 +36,7 @@ ppobj * ppdict_get_obj (ppdict *dict, const char *name)
 
 ppobj * ppdict_rget_obj (ppdict *dict, const char *name)
 {
-	ppobj *obj;
+  ppobj *obj;
   return (obj = ppdict_get_obj(dict, name)) != NULL ? ppobj_rget_obj(obj) : NULL;
 }
 

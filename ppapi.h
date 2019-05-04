@@ -51,7 +51,7 @@ typedef struct {
 #if ARM_COMPLIANT
 typedef struct {
   ppobj *data;
-	ppname *keys;
+  ppname *keys;
   size_t size;
   ppnum PPDICT_ALIGNMENT;
 } ppdict;
@@ -59,7 +59,7 @@ typedef struct {
 #else
 typedef struct {
   ppobj *data;
-	ppname *keys;
+  ppname *keys;
   size_t size;
 } ppdict;
 #endif
