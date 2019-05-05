@@ -1,0 +1,6 @@
+This is pplib - pdf disassembling library for luatex (luatex.org)
+The library has no luatex dependencies, it depends only on zlib.
+However, pplib was tailor-made for luatex and its functionals are
+somewhat limited (eg. read-only PDF support). 
+
+author: Pawe³ Jackowski p.jackowski@gust.org.pl
