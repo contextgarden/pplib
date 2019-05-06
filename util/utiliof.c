@@ -1323,7 +1323,7 @@ int iof_get_int32 (iof *I, int32_t *number)
   return 1;
 }
 
-int iof_get_intlw (iof *I, intlw_t *number)
+int iof_get_slong (iof *I, long *number)
 {
   int sign, c = iof_char(I);
   iof_scan_sign(I, c, sign);
@@ -1351,7 +1351,15 @@ int iof_get_uint32 (iof *I, uint32_t *number)
   return 1;
 }
 
-int iof_get_uintlw (iof *I, uintlw_t *number)
+int iof_get_ulong (iof *I, unsigned long *number)
+{
+  int c = iof_char(I);
+  if (!base10_digit(c)) return 0;
+  iof_read_integer(I, c, *number);
+  return 1;
+}
+
+int iof_get_usize (iof *I, size_t *number)
 {
   int c = iof_char(I);
   if (!base10_digit(c)) return 0;
@@ -1378,7 +1386,7 @@ int iof_get_int32_radix (iof *I, int32_t *number, int radix)
 
 }
 
-int iof_get_intlw_radix (iof *I, intlw_t *number, int radix)
+int iof_get_slong_radix (iof *I, long *number, int radix)
 {
   int sign, c = iof_char(I);
   iof_scan_sign(I, c, sign);
@@ -1406,7 +1414,15 @@ int iof_get_uint32_radix (iof *I, uint32_t *number, int radix)
   return 1;
 }
 
-int iof_get_uintlw_radix (iof *I, uintlw_t *number, int radix)
+int iof_get_ulong_radix (iof *I, unsigned long *number, int radix)
+{
+  int c = iof_char(I);
+  if (!base10_digit(c)) return 0;
+  iof_read_radix(I, c, *number, radix);
+  return 1;
+}
+
+int iof_get_usize_radix (iof *I, size_t *number, int radix)
 {
   int c = iof_char(I);
   if (!base10_digit(c)) return 0;
@@ -1539,7 +1555,7 @@ int iof_get_double (iof *I, double *number) // cf. string_to_double()
   return 1;
 }
 
-int iof_get_float (iof *I, float *number) // cf. string_to_float() in utilnumber.c
+int iof_get_float (iof *I, float *number) // cf. string_to_float()
 {
   int sign, exponent10, c = iof_char(I);
   iof_scan_sign(I, c, sign);
@@ -1561,7 +1577,7 @@ int iof_get_float (iof *I, float *number) // cf. string_to_float() in utilnumber
   return 1;
 }
 
-int iof_conv_double (iof *I, double *number) // cf. convert_to_double() in utilnumber.c
+int iof_conv_double (iof *I, double *number) // cf. convert_to_double()
 {
   int sign, exponent10, c = iof_char(I);
   iof_scan_sign(I, c, sign);
@@ -1595,138 +1611,144 @@ int iof_conv_float (iof *I, float *number) // cf. convert_to_float()
 
 /* integer to iof; return a number of written bytes */
 
-#define iof_copy_number_buffer(O, s, p) for (p = s; *p && iof_writable(O); iof_set(O, *p), ++p)
-
 size_t iof_put_int32 (iof *O, int32_t number)
 {
-  const char *s, *p;
-  s = int32_to_string(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = int32_to_string(number, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_intlw (iof *O, intlw_t number)
+size_t iof_put_slong (iof *O, long number)
 {
-  const char *s, *p;
-  s = intlw_to_string(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = slong_to_string(number, &size);
+  return iof_write(O, s, size);
 }
 
 size_t iof_put_int64 (iof *O, int64_t number)
 {
-  const char *s, *p;
-  s = int64_to_string(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = int64_to_string(number, &size);
+  return iof_write(O, s, size);
 }
 
 size_t iof_put_uint32 (iof *O, uint32_t number)
 {
-  const char *s, *p;
-  s = uint32_to_string(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = uint32_to_string(number, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_uintlw (iof *O, uintlw_t number)
+size_t iof_put_ulong (iof *O, unsigned long number)
 {
-  const char *s, *p;
-  s = uintlw_to_string(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = ulong_to_string(number, &size);
+  return iof_write(O, s, size);
+}
+
+size_t iof_put_usize (iof *O, size_t number)
+{
+  const char *s;
+  size_t size;
+  s = usize_to_string(number, &size);
+  return iof_write(O, s, size);
 }
 
 size_t iof_put_uint64 (iof *O, uint64_t number)
 {
-  const char *s, *p;
-  s = uint64_to_string(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = uint64_to_string(number, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_int32_radix (iof *O, int32_t number, int radix)
+size_t iof_put_int32_radix (iof *O, int32_t number, int radix, int uc)
 {
-  const char *s, *p;
-  s = int32_to_radix(number, radix);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = int32_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_intlw_radix (iof *O, intlw_t number, int radix)
+size_t iof_put_long_radix (iof *O, long number, int radix, int uc)
 {
-  const char *s, *p;
-  s = intlw_to_radix(number, radix);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = slong_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_int64_radix (iof *O, int64_t number, int radix)
+size_t iof_put_int64_radix (iof *O, int64_t number, int radix, int uc)
 {
-  const char *s, *p;
-  s = int64_to_radix(number, radix);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = int64_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_uint32_radix (iof *O, uint32_t number, int radix)
+size_t iof_put_uint32_radix (iof *O, uint32_t number, int radix, int uc)
 {
-  const char *s, *p;
-  s = uint32_to_radix(number, radix);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = uint32_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_uintlw_radix (iof *O, uintlw_t number, int radix)
+size_t iof_put_ulong_radix (iof *O, unsigned long number, int radix, int uc)
 {
-  const char *s, *p;
-  s = uintlw_to_radix(number, radix);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = ulong_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
 }
 
-size_t iof_put_uint64_radix (iof *O, uint64_t number, int radix)
+size_t iof_put_usize_radix (iof *O, size_t number, int radix, int uc)
 {
-  const char *s, *p;
-  s = uint64_to_radix(number, radix);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = usize_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
+}
+
+size_t iof_put_uint64_radix (iof *O, uint64_t number, int radix, int uc)
+{
+  const char *s;
+  size_t size;
+  s = uint64_to_radix(number, radix, uc, &size);
+  return iof_write(O, s, size);
 }
 
 /* roman numerals */
 
-size_t iof_put_roman_uc (iof *O, uint16_t number)
+size_t iof_put_roman (iof *O, uint16_t number, int uc)
 {
-  const char *s, *p;
-  s = uint16_to_roman_uc(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
-}
-
-size_t iof_put_roman_lc (iof *O, uint16_t number)
-{
-  const char *s, *p;
-  s = uint16_to_roman_lc(number);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = uint16_to_roman(number, uc, &size);
+  return iof_write(O, s, size);
 }
 
 /* double/float to iof; return the number of written bytes */
 
 size_t iof_put_double (iof *O, double number, int digits)
 {
-  const char *s, *p;
-  s = double_to_string(number, digits);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = double_to_string(number, digits, &size);
+  return iof_write(O, s, size);
 }
 
 size_t iof_put_float (iof *O, float number, int digits)
 {
-  const char *s, *p;
-  s = float_to_string(number, digits);
-  iof_copy_number_buffer(O, s, p);
-  return p - s;
+  const char *s;
+  size_t size;
+  s = float_to_string(number, digits, &size);
+  return iof_write(O, s, size);
 }
 
 /* iof to binary integer; pretty common */

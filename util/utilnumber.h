@@ -6,17 +6,13 @@
 #include "utilplat.h"
 #include "utildecl.h"
 
-/* since 'long' isn't long for msvc64/mingw64, we need a type for machine word */
-
-#if !defined(__cplusplus) || !defined(_MSC_VER)
-#  include <stdint.h> // int*_t types are in standard in msvc++
+#if defined(__cplusplus) && defined(_MSC_VER)
+// int*_t types are in standard in msvc++
+#else
+#  include <stdint.h>
 #endif
 
-//#if defined(MSVC64) || defined(__MINGW64__) || defined(__x86_64__) || UINTPTR_MAX > 0xffffffff
-//#  define BIT64
-//#else
-//#  define BIT64
-//#endif
+/* 'long' isn't long for msvc64/mingw64, we need a type for machine word */
 
 #if defined(_WIN64) || defined(__MINGW32__)
 #  define INT64F "%I64d"
@@ -27,6 +23,7 @@
 #endif
 
 #if defined(MSVC64)
+#  define INTLW_IS_INT64
 #  define intlw_t int64_t
 #  define uintlw_t uint64_t
 #  define INTLW(N) N##I64
@@ -34,6 +31,7 @@
 #  define INTLWF INT64F
 #  define UINTLWF UINT64F
 #elif defined(__MINGW64__)
+#  define INTLW_IS_INT64
 #  define intlw_t int64_t
 #  define uintlw_t uint64_t
 #  define INTLW(N) N##LL
@@ -41,6 +39,7 @@
 #  define INTLWF INT64F
 #  define UINTLWF UINT64F
 #else // 32bit or sane 64bit (LP64)
+#  define INTLW_IS_LONG
 #  define intlw_t long
 #  define uintlw_t unsigned long
 #  define INTLW(N) N##L
@@ -49,11 +48,22 @@
 #  define UINTLWF "%lu"
 #endif
 
+// ssize_t is missing in MSVC, but defining it is risky; some environments (eg. python) typedefs ssize_t on its own way..
+// #if defined(MSVC64)
+// #  define ssize_t int32_t
+// #else
+// #  if defined(MSVC32)
+// #    define ssize_t int64_t
+// #  endif
+// #endif
+
 /* basic constants */
 
 #define MAX_RADIX 36
-// #define MAX_INTEGER_DIGITS 65 /* 64-bit number in binary form plus '\0' */
-#define MAX_INTEGER_DIGITS 128 // to handle romannumeral of short int
+#define MAX_INTEGER_DIGITS 65 /* 64-bit number in binary form plus '\0' */
+#define MAX_ROMAN_DIGITS 128  /* to handle romannumeral of short int (up to 65 leading 'M') */
+#define MAX_NUMBER_DIGITS 512
+#define NUMBER_BUFFER_SIZE MAX_NUMBER_DIGITS
 
 #define base36_uc_alphabet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define base36_lc_alphabet "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -98,117 +108,152 @@ extern const int base16_lookup[];
 //#define base_digit(c, radix) ((unsigned)(base36_lookup[c]) < (unsigned)(radix))
 //#define base_value(c, radix) (base_digit(c, radix) ? base36_lookup[c] : -1)
 
+UTILDEF extern char util_number_buffer[NUMBER_BUFFER_SIZE];
+
 /* integer from string; return a pointer to character next to the last digit */
 
 UTILAPI const char * string_to_int32 (const char *s, int32_t *number);
-UTILAPI const char * string_to_intlw (const char *s, intlw_t *number);
+UTILAPI const char * string_to_slong (const char *s, long *number);
 UTILAPI const char * string_to_int64 (const char *s, int64_t *number);
 
 UTILAPI const char * string_to_uint32 (const char *s, uint32_t *number);
-UTILAPI const char * string_to_uintlw (const char *s, uintlw_t *number);
+UTILAPI const char * string_to_ulong (const char *s, unsigned long *number);
+UTILAPI const char * string_to_usize (const char *s, size_t *number);
 UTILAPI const char * string_to_uint64 (const char *s, uint64_t *number);
 
 UTILAPI const char * radix_to_int32 (const char *s, int32_t *number, int radix);
-UTILAPI const char * radix_to_intlw (const char *s, intlw_t *number, int radix);
+UTILAPI const char * radix_to_slong (const char *s, long *number, int radix);
 UTILAPI const char * radix_to_int64 (const char *s, int64_t *number, int radix);
 
 UTILAPI const char * radix_to_uint32 (const char *s, uint32_t *number, int radix);
-UTILAPI const char * radix_to_uintlw (const char *s, uintlw_t *number, int radix);
+UTILAPI const char * radix_to_ulong (const char *s, unsigned long *number, int radix);
+UTILAPI const char * radix_to_usize (const char *s, size_t *number, int radix);
 UTILAPI const char * radix_to_uint64 (const char *s, uint64_t *number, int radix);
 
-UTILAPI const char * roman_to_uint16 (const char *s, uint16_t *number);
-
 UTILAPI const char * alpha_to_uint32 (const char *s, uint32_t *number);
-UTILAPI const char * alpha_to_uintlw (const char *s, uintlw_t *number);
+UTILAPI const char * alpha_to_ulong (const char *s, unsigned long *number);
+UTILAPI const char * alpha_to_usize (const char *s, size_t *number);
 UTILAPI const char * alpha_to_uint64 (const char *s, uint64_t *number);
 
-UTILAPI const char * alphan_to_uint32 (const char *s, uint32_t *number);
-UTILAPI const char * alphan_to_uintlw (const char *s, uintlw_t *number);
-UTILAPI const char * alphan_to_uint64 (const char *s, uintlw_t *number);
+/* integer to string */
 
-/*
-integer to string; return a pointer to null-terminated static const string
-same but also stores pointer to trailing null (to be used for firther formatting)
-*/
+UTILAPI char * int32_as_string (int32_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * slong_as_string (long number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * int64_as_string (int64_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
 
-UTILAPI char * int32_as_string (int32_t number, char **e);
-UTILAPI char * intlw_as_string (intlw_t number, char **e);
-UTILAPI char * int64_as_string (int64_t number, char **e);
+#define int32_to_string(number, psize) int32_as_string(number, util_number_buffer, psize)
+#define slong_to_string(number, psize) slong_as_string(number, util_number_buffer, psize)
+#define int64_to_string(number, psize) int64_as_string(number, util_number_buffer, psize)
 
-UTILAPI char * uint32_as_string (uint32_t number, char **e);
-UTILAPI char * uintlw_as_string (uintlw_t number, char **e);
-UTILAPI char * uint64_as_string (uint64_t number, char **e);
+UTILAPI char * uint32_as_string (uint32_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * ulong_as_string (unsigned long number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * usize_as_string  (size_t   number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * uint64_as_string (uint64_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
 
-#define int32_to_string(number) int32_as_string(number, NULL)
-#define intlw_to_string(number) intlw_as_string(number, NULL)
-#define int64_to_string(number) int64_as_string(number, NULL)
+#define uint32_to_string(number, psize) uint32_as_string(number, util_number_buffer, psize)
+#define ulong_to_string(number, psize) ulong_as_string(number, util_number_buffer, psize)
+#define usize_to_string(number, psize)  usize_as_string(number, util_number_buffer, psize)
+#define uint64_to_string(number, psize) uint64_as_string(number, util_number_buffer, psize)
 
-#define uint32_to_string(number) uint32_as_string(number, NULL)
-#define uintlw_to_string(number) uintlw_as_string(number, NULL)
-#define uint64_to_string(number) uint64_as_string(number, NULL)
+UTILAPI char * int32_as_radix (int32_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * slong_as_radix (long number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * int64_as_radix (int64_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
 
-UTILAPI char * int32_as_radix (int32_t number, int radix, char **e);
-UTILAPI char * intlw_as_radix (intlw_t number, int radix, char **e);
-UTILAPI char * int64_as_radix (int64_t number, int radix, char **e);
+#define int32_to_radix(number, radix, uc, psize) int32_as_radix(number, radix, uc, util_number_buffer, psize)
+#define slong_to_radix(number, radix, uc, psize) slong_as_radix(number, radix, uc, util_number_buffer, psize)
+#define int64_to_radix(number, radix, uc, psize) int64_as_radix(number, radix, uc, util_number_buffer, psize)
 
-UTILAPI char * uint32_as_radix (uint32_t number, int radix, char **e);
-UTILAPI char * uintlw_as_radix (uintlw_t number, int radix, char **e);
-UTILAPI char * uint64_as_radix (uint64_t number, int radix, char **e);
+UTILAPI char * uint32_as_radix (uint32_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * ulong_as_radix (unsigned long number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * usize_as_radix  (size_t   number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * uint64_as_radix (uint64_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
 
-#define int32_to_radix(number, radix) int32_as_radix(number, radix, NULL)
-#define intlw_to_radix(number, radix) intlw_as_radix(number, radix, NULL)
-#define int64_to_radix(number, radix) int64_as_radix(number, radix, NULL)
+#define uint32_to_radix(number, radix, uc, psize) uint32_as_radix(number, radix, uc, util_number_buffer, psize)
+#define ulong_to_radix(number, radix, uc, psize) ulong_as_radix(number, radix, uc, util_number_buffer, psize)
+#define usize_to_radix(number, radix, uc, psize)  usize_as_radix(number, radix, uc, util_number_buffer, psize)
+#define uint64_to_radix(number, radix, uc, psize) uint64_as_radix(number, radix, uc, util_number_buffer, psize)
 
-#define uint32_to_radix(number, radix) uint32_as_radix(number, radix, NULL)
-#define uintlw_to_radix(number, radix) uintlw_as_radix(number, radix, NULL)
-#define uint64_to_radix(number, radix) uint64_as_radix(number, radix, NULL)
+UTILAPI char * uint32_as_alpha (uint32_t number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * ulong_as_alpha (unsigned long number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * usize_as_alpha  (size_t   number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
+UTILAPI char * uint64_as_alpha (uint64_t number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize);
 
-UTILAPI char * uint32_as_alpha_uc (uint32_t number, char **e);
-UTILAPI char * uint32_as_alpha_lc (uint32_t number, char **e);
-UTILAPI char * uintlw_as_alpha_uc (uintlw_t number, char **e);
-UTILAPI char * uintlw_as_alpha_lc (uintlw_t number, char **e);
-UTILAPI char * uint64_as_alpha_uc (uint64_t number, char **e);
-UTILAPI char * uint64_as_alpha_lc (uint64_t number, char **e);
+#define uint32_to_alpha(number, uc, psize) uint32_as_alpha(number, uc, util_number_buffer, psize)
+#define ulong_to_alpha(number, uc, psize) ulong_as_alpha(number, uc, util_number_buffer, psize)
+#define usize_to_alpha(number, uc, psize)  usize_as_alpha(number, uc, util_number_buffer, psize)
+#define uint64_to_alpha(number, uc, psize) uint64_as_alpha(number, uc, util_number_buffer, psize)
 
-#define uint32_to_alpha_uc(number) uint32_as_alpha_uc(number, NULL)
-#define uint32_to_alpha_lc(number) uint32_as_alpha_lc(number, NULL)
-#define uintlw_to_alpha_uc(number) uintlw_as_alpha_uc(number, NULL)
-#define uintlw_to_alpha_lc(number) uintlw_as_alpha_lc(number, NULL)
-#define uint64_to_alpha_uc(number) uint64_as_alpha_uc(number, NULL)
-#define uint64_to_alpha_lc(number) uint64_as_alpha_lc(number, NULL)
+#ifdef INTLW_IS_INT64
 
-UTILAPI char * uint32_as_alphan_uc (uint32_t number, char **e);
-UTILAPI char * uint32_as_alphan_lc (uint32_t number, char **e);
-UTILAPI char * uintlw_as_alphan_uc (uintlw_t number, char **e);
-UTILAPI char * uintlw_as_alphan_lc (uintlw_t number, char **e);
-UTILAPI char * uint64_as_alphan_uc (uint64_t number, char **e);
-UTILAPI char * uint64_as_alphan_lc (uint64_t number, char **e);
+#  define string_to_intlw(s, number) string_to_int64(s, number)
+#  define string_to_uintlw(s, number) string_to_uint64(s, number)
 
-#define uint32_to_alphan_uc(number) uint32_as_alpha_uc(number, NULL)
-#define uint32_to_alphan_lc(number) uint32_as_alpha_lc(number, NULL)
-#define uintlw_to_alphan_uc(number) uintlw_as_alpha_uc(number, NULL)
-#define uintlw_to_alphan_lc(number) uintlw_as_alpha_lc(number, NULL)
-#define uint64_to_alphan_uc(number) uint64_as_alpha_uc(number, NULL)
-#define uint64_to_alphan_lc(number) uint64_as_alpha_lc(number, NULL)
+#  define radix_to_intlw(s, number, radix) radix_to_int64(s, number, radix)
+#  define radix_to_uintlw(s, number, radix) radix_to_uint64(s, number, radix)
+
+#  define alpha_to_uintlw(s, number) alpha_to_uint64(s, number)
+
+#  define intlw_as_string(number, ibuf, psize) int64_as_string(number, ibuf, psize)
+#  define uintlw_as_string(number, ibuf, psize) uint64_as_string(number, ibuf, psize)
+
+#  define intlw_to_string(number, psize) int64_to_string(number, psize)
+#  define uintlw_to_string(number, psize) uint64_to_string(number, psize)
+
+#  define intlw_as_radix(number, radix, uc, ibuf, psize) int64_as_radix(number, radix, uc, ibuf, psize)
+#  define uintlw_as_radix(number, radix, uc, ibuf, psize) uint64_as_radix(number, radix, uc, ibuf, psize)
+
+#  define intlw_to_radix(number, radix, uc, psize) int64_to_radix(number, radix, uc, psize)
+#  define uintlw_to_radix(number, radix, uc, psize) uint64_to_radix(number, radix, uc, psize)
+
+#  define uintlw_as_alpha(number, uc, ibuf, psize) uint64_as_alpha(number, uc, ibuf, psize)
+#  define uintlw_to_alpha(number, uc, psize) uint64_to_alpha(number, uc, ibuf, psize)
+
+#elif INTLW_IS_LONG
+
+#  define string_to_intlw(s, number) string_to_slong(s, number)
+#  define string_to_uintlw(s, number) string_to_ulong(s, number)
+
+#  define radix_to_intlw(s, number, radix) radix_to_slong(s, number, radix)
+#  define radix_to_uintlw(s, number, radix) radix_to_ulong(s, number, radix)
+
+#  define alpha_to_uintlw(s, number) alpha_to_ulong(s, number)
+
+#  define intlw_as_string(number, ibuf, psize) slong_as_string(number, ibuf, psize)
+#  define uintlw_as_string(number, ibuf, psize) ulong_as_string(number, ibuf, psize)
+
+#  define intlw_to_string(number, psize) slong_to_string(number, psize)
+#  define uintlw_to_string(number, psize) ulong_to_string(number, psize)
+
+#  define intlw_as_radix(number, radix, uc, ibuf, psize) slong_as_radix(number, radix, uc, ibuf, psize)
+#  define uintlw_as_radix(number, radix, uc, ibuf, psize) ulong_as_radix(number, radix, uc, ibuf, psize)
+
+#  define intlw_to_radix(number, radix, uc, psize) slong_to_radix(number, radix, uc, psize)
+#  define uintlw_to_radix(number, radix, uc, psize) ulong_to_radix(number, radix, uc, psize)
+
+#  define uintlw_as_alpha(number, uc, ibuf, psize) ulong_as_alpha(number, uc, ibuf, psize)
+#  define uintlw_to_alpha(number, uc, psize) ulong_to_alpha(number, uc, ibuf, psize)
+
+#endif
+
+/* a..z, aa..zz, aaa..zzz (limited to uint16_t, valid for N <= buffer_size * 26) */
+
+UTILAPI const char * alphan_to_uint16 (const char *s, uint16_t *number);
+UTILAPI char * uint16_as_alphan (uint16_t number, int uc, char ibuf[], size_t size, size_t *psize);
+#define uint16_to_alphan(number, uc, psize) uint16_as_alphan(number, uc, util_number_buffer, NUMBER_BUFFER_SIZE, psize)
 
 /* roman numeral (limited to uint16_t) */
 
-UTILAPI char * uint16_as_roman_uc (uint16_t number, char **e);
-UTILAPI char * uint16_as_roman_lc (uint16_t number, char **e);
-
-#define uint16_to_roman_uc(number) uint16_as_roman_uc(number, NULL)
-#define uint16_to_roman_lc(number) uint16_as_roman_lc(number, NULL)
-
-#define uint16_as_roman(number) uint16_as_roman_uc(number)
-#define uint16_to_roman(number) uint16_to_roman_uc(number)
+UTILAPI const char * roman_to_uint16 (const char *s, uint16_t *number);
+UTILAPI char * uint16_as_roman (uint16_t number, int uc, char ibuf[MAX_ROMAN_DIGITS], size_t *psize);
+#define uint16_to_roman(number, uc, psize) uint16_as_roman(number, uc, util_number_buffer, psize)
 
 /* double/float  to string */
 
-UTILAPI char * double_to_string (double number, int digits);
-UTILAPI char * float_to_string (float number, int digits);
+UTILAPI char * double_as_string (double number, int digits, char nbuf[MAX_NUMBER_DIGITS], size_t *psize);
+#define double_to_string(number, digits, psize) double_as_string(number, digits, util_number_buffer, psize)
 
-UTILAPI char * double_as_string (double number, int digits, char **r, char **e);
-UTILAPI char * float_as_string (float number, int digits, char **r, char **e);
+UTILAPI char * float_as_string (float number, int digits, char nbuf[MAX_NUMBER_DIGITS], size_t *psize);
+#define float_to_string(number, digits, psize) float_as_string(number, digits, util_number_buffer, psize)
 
 /* string to double/float */
 

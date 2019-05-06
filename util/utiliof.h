@@ -505,22 +505,36 @@ UTILAPI size_t iof_repc (iof *O, char c, size_t bytes);
 #define iof_scan_exponent10(I, c, exponent10) _scan_exponent10(c, exponent10, iof_next(I))
 
 UTILAPI int iof_get_int32 (iof *I, int32_t *number);
-UTILAPI int iof_get_intlw (iof *I, intlw_t *number);
+UTILAPI int iof_get_slong (iof *I, long *number);
 UTILAPI int iof_get_int64 (iof *I, int64_t *number);
 
 UTILAPI int iof_get_uint32 (iof *I, uint32_t *number);
-UTILAPI int iof_get_uintlw (iof *I, uintlw_t *number);
+UTILAPI int iof_get_ulong (iof *I, unsigned long *number);
+UTILAPI int iof_get_usize (iof *I, size_t *number);
 UTILAPI int iof_get_uint64 (iof *I, uint64_t *number);
 
 UTILAPI int iof_get_int32_radix (iof *I, int32_t *number, int radix);
-UTILAPI int iof_get_intlw_radix (iof *I, intlw_t *number, int radix);
+UTILAPI int iof_get_slong_radix (iof *I, long *number, int radix);
 UTILAPI int iof_get_int64_radix (iof *I, int64_t *number, int radix);
 
 UTILAPI int iof_get_uint32_radix (iof *I, uint32_t *number, int radix);
-UTILAPI int iof_get_uintlw_radix (iof *I, uintlw_t *number, int radix);
+UTILAPI int iof_get_ulong_radix (iof *I, unsigned long *number, int radix);
+UTILAPI int iof_get_usize_radix (iof *I, size_t *number, int radix);
 UTILAPI int iof_get_uint64_radix (iof *I, uint64_t *number, int radix);
 
-UTILAPI int iof_get_roman (iof *I, unsigned short int *number);
+#ifdef INTLW_IS_INT64
+#  define iof_get_intlw(I, number) iof_get_int64(I, number)
+#  define iof_get_uintlw(I, number) iof_get_uint64(I, number)
+#  define iof_get_intlw_radix(I, number, radix) iof_get_int64_radix(I, number, radix)
+#  define iof_get_uintlw_radix(I, number, radix) iof_get_uint64_radix(I, number, radix)
+#elif INTLW_IS_LONG
+#  define iof_get_intlw(I, number) iof_get_slong(I, number)
+#  define iof_get_uintlw(I, number) iof_get_ulong(I, number)
+#  define iof_get_intlw_radix(I, number, radix) iof_get_slong_radix(I, number, radix)
+#  define iof_get_uintlw_radix(I, number, radix) iof_get_ulong_radix(I, number, radix)
+#endif
+
+UTILAPI int iof_get_roman (iof *I, uint16_t *number);
 
 UTILAPI int iof_get_double (iof *I, double *number);
 UTILAPI int iof_get_float (iof *I, float *number);
@@ -531,29 +545,41 @@ UTILAPI int iof_conv_float (iof *I, float *number);
 /* number to iof; return a number of written bytes */
 
 UTILAPI size_t iof_put_int32 (iof *O, int32_t number);
-UTILAPI size_t iof_put_intlw (iof *O, intlw_t number);
+UTILAPI size_t iof_put_slong (iof *O, long number);
 UTILAPI size_t iof_put_int64 (iof *O, int64_t number);
 
 UTILAPI size_t iof_put_uint32 (iof *O, uint32_t number);
-UTILAPI size_t iof_put_uintlw (iof *O, uintlw_t number);
+UTILAPI size_t iof_put_ulong (iof *O, unsigned long number);
+UTILAPI size_t iof_put_usize  (iof *O, size_t number);
 UTILAPI size_t iof_put_uint64 (iof *O, uint64_t number);
 
-UTILAPI size_t iof_put_int32_radix (iof *O, int32_t number, int radix);
-UTILAPI size_t iof_put_intlw_radix (iof *O, intlw_t number, int radix);
-UTILAPI size_t iof_put_int64_radix (iof *O, int64_t number, int radix);
+UTILAPI size_t iof_put_int32_radix (iof *O, int32_t number, int radix, int uc);
+UTILAPI size_t iof_put_slong_radix (iof *O, long number, int radix, int uc);
+UTILAPI size_t iof_put_int64_radix (iof *O, int64_t number, int radix, int uc);
 
-UTILAPI size_t iof_put_uint32_radix (iof *O, uint32_t number, int radix);
-UTILAPI size_t iof_put_uintlw_radix (iof *O, uintlw_t number, int radix);
-UTILAPI size_t iof_put_uint64_radix (iof *O, uint64_t number, int radix);
+UTILAPI size_t iof_put_uint32_radix (iof *O, uint32_t number, int radix, int uc);
+UTILAPI size_t iof_put_ulong_radix (iof *O, unsigned long number, int radix, int uc);
+UTILAPI size_t iof_put_usize_radix  (iof *O, size_t number,   int radix, int uc);
+UTILAPI size_t iof_put_uint64_radix (iof *O, uint64_t number, int radix, int uc);
 
-UTILAPI size_t iof_put_roman_uc (iof *O, uint16_t number);
-UTILAPI size_t iof_put_roman_lc (iof *O, uint16_t number);
-#define iof_put_roman(I, number) iof_put_roman_uc(I, number)
+#ifdef INTLW_IS_INT64
+#  define iof_put_intlw(O, number) iof_put_int64(O, number)
+#  define iof_put_uintlw(O, number) iof_put_uint64(O, number)
+#  define iof_put_intlw_radix(O, number, radix, uc) iof_put_int64_radix(O, number, radix, uc)
+#  define iof_put_uintlw_radix(O, number, radix, uc) iof_put_uint64_radix(O, number, radix, uc)
+#elif
+#  define iof_put_intlw(O, number) iof_put_slong(O, number)
+#  define iof_put_uintlw(O, number) iof_put_ulong(O, number)
+#  define iof_put_intlw_radix(O, number, radix, uc) iof_put_slong_radix(O, number, radix, uc)
+#  define iof_put_uintlw_radix(O, number, radix, uc) iof_put_ulong_radix(O, number, radix, uc)
+#endif
+
+UTILAPI size_t iof_put_roman (iof *O, uint16_t number, int uc);
 
 UTILAPI size_t iof_put_double(iof *O, double number, int digits);
 UTILAPI size_t iof_put_float(iof *O, float number, int digits);
 
-/* common stuff for binary integers */
+/* common helpers for binary parsers */
 
 UTILAPI int iof_get_be_uint2 (iof *I, uint32_t *pnumber);
 UTILAPI int iof_get_be_uint3 (iof *I, uint32_t *pnumber);

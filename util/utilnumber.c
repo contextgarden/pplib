@@ -80,6 +80,10 @@ const int base36_lookup[] = {
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 };
 
+/* common buffer for quick conversions (unsafe) */
+
+char util_number_buffer[NUMBER_BUFFER_SIZE] = { 0 };
+
 /* integer from string; return a pointer to character next to the last digit */
 
 #define string_scan_sign(s, c, sign) _scan_sign(c, sign, *++s)
@@ -97,7 +101,7 @@ const char * string_to_int32 (const char *s, int32_t *number)
   return s;
 }
 
-const char * string_to_intlw (const char *s, intlw_t *number)
+const char * string_to_slong (const char *s, long *number)
 {
   int sign, c = *s;
   string_scan_sign(s, c, sign);
@@ -122,7 +126,14 @@ const char * string_to_uint32 (const char *s, uint32_t *number)
   return s;
 }
 
-const char * string_to_uintlw (const char *s, uintlw_t *number)
+const char * string_to_ulong (const char *s, unsigned long *number)
+{
+  int c = *s;
+  string_scan_integer(s, c, *number);
+  return s;
+}
+
+const char * string_to_usize (const char *s, size_t *number)
 {
   int c = *s;
   string_scan_integer(s, c, *number);
@@ -145,7 +156,7 @@ const char * radix_to_int32 (const char *s, int32_t *number, int radix)
   return s;
 }
 
-const char * radix_to_intlw (const char *s, intlw_t *number, int radix)
+const char * radix_to_slong (const char *s, long *number, int radix)
 {
   int sign, c = *s;
   string_scan_sign(s, c, sign);
@@ -170,7 +181,14 @@ const char * radix_to_uint32 (const char *s, uint32_t *number, int radix)
   return s;
 }
 
-const char * radix_to_uintlw (const char *s, uintlw_t *number, int radix)
+const char * radix_to_ulong (const char *s, unsigned long *number, int radix)
+{
+  int c = *s;
+  string_scan_radix(s, c, *number, radix);
+  return s;
+}
+
+const char * radix_to_usize (const char *s, size_t *number, int radix)
 {
   int c = *s;
   string_scan_radix(s, c, *number, radix);
@@ -274,10 +292,7 @@ const char * roman_to_uint16 (const char *s, uint16_t *number)
 
 /* integer to string; return a pointer to null-terminated static const string */
 
-static char integer_buffer[MAX_INTEGER_DIGITS] = {'\0'};
-#define end_of_integer_buffer (integer_buffer + MAX_INTEGER_DIGITS - 1)
-
-/* writing integers */
+#define end_of_integer_buffer(integer_buffer) (integer_buffer + MAX_INTEGER_DIGITS - 1)
 
 #define number_printrev_signed(p, number, quotient) \
   do { \
@@ -292,63 +307,59 @@ static char integer_buffer[MAX_INTEGER_DIGITS] = {'\0'};
     *--p = (char)(quotient - integer_multiplied10(number)) + '0'; \
   } while (number)
 
-char * int32_as_string (int32_t number, char **e)
+#define SINTTYPE_AS_STRING(inttype, number, ibuf, psize) \
+  char *p, *e; \
+  inttype quotient; \
+  e = p = end_of_integer_buffer(ibuf); *p = '\0'; \
+  number_printrev_signed(p, number, quotient); \
+  *psize = (size_t)(e - p)
+
+#define UINTTYPE_AS_STRING(inttype, number, ibuf, psize) \
+  char *p, *e; \
+  inttype quotient; \
+  e = p = end_of_integer_buffer(ibuf); *p = '\0'; \
+  number_printrev_unsigned(p, number, quotient); \
+  *psize = (size_t)(e - p)
+
+char * int32_as_string (int32_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  int quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_signed(p, number, quotient);
+  SINTTYPE_AS_STRING(int32_t, number, ibuf, psize);
   return p;
 }
 
-char * intlw_as_string (intlw_t number, char **e)
+char * slong_as_string (long number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  intlw_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_signed(p, number, quotient);
+  SINTTYPE_AS_STRING(long, number, ibuf, psize);
   return p;
 }
 
-char * int64_as_string (int64_t number, char **e)
+char * int64_as_string (int64_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  int64_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_signed(p, number, quotient);
+  SINTTYPE_AS_STRING(int64_t, number, ibuf, psize);
   return p;
 }
 
-char * uint32_as_string (uint32_t number, char **e)
+char * uint32_as_string (uint32_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uint32_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned(p, number, quotient);
+  UINTTYPE_AS_STRING(uint32_t, number, ibuf, psize);
   return p;
 }
 
-char * uintlw_as_string (uintlw_t number, char **e)
+char * ulong_as_string (unsigned long number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uintlw_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned(p, number, quotient);
+  UINTTYPE_AS_STRING(unsigned long, number, ibuf, psize);
   return p;
 }
 
-char * uint64_as_string (uint64_t number, char **e)
+char * usize_as_string (size_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uint64_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned(p, number, quotient);
+  UINTTYPE_AS_STRING(size_t, number, ibuf, psize);
+  return p;
+}
+
+char * uint64_as_string (uint64_t number, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
+{
+  UINTTYPE_AS_STRING(uint64_t, number, ibuf, psize);
   return p;
 }
 
@@ -366,10 +377,10 @@ char * uint64_as_string (uint64_t number, char **e)
     *--p = base36_lc_palindrome[MAX_RADIX - 1 + (quotient - number*radix)]; \
   } while (number)
 
-#define number_printrev_signed_radix(p, number, radix, quotient) \
+#define number_printrev_signed_radix(p, number, radix, quotient, uc) \
   do { \
-    if (radix > 0) { number_printrev_signed_radix_uc(p, number, radix, quotient); } \
-    else { radix = -radix; number_printrev_signed_radix_lc(p, number, radix, quotient); } \
+    if (uc) { number_printrev_signed_radix_uc(p, number, radix, quotient); } \
+    else { number_printrev_signed_radix_lc(p, number, radix, quotient); } \
     if (quotient < 0) *--p = '-'; \
   } while (0)
 
@@ -385,69 +396,73 @@ char * uint64_as_string (uint64_t number, char **e)
     *--p = base36_lc_alphabet[quotient % radix]; \
   } while (number)
 
-#define number_printrev_unsigned_radix(p, number, radix, quotient) \
+#define number_printrev_unsigned_radix(p, number, radix, quotient, uc) \
   do { \
-    if (radix > 0) { number_printrev_unsigned_radix_uc(p, number, radix, quotient); } \
-    else { radix = -radix; number_printrev_unsigned_radix_lc(p, number, radix, quotient); } \
+    if (uc) { number_printrev_unsigned_radix_uc(p, number, radix, quotient); } \
+    else { number_printrev_unsigned_radix_lc(p, number, radix, quotient); } \
   } while (0)
 
-char * int32_as_radix (int number, int radix, char **e)
+#define SINTTYPE_AS_RADIX(inttype, number, radix, uc, ibuf, psize) \
+  char *p, *e; \
+  inttype quotient; \
+  e = p = end_of_integer_buffer(ibuf); *p = '\0'; \
+  number_printrev_signed_radix(p, number, radix, quotient, uc); \
+  *psize = (size_t)(e - p)
+
+#define UINTTYPE_AS_RADIX(inttype, number, radix, uc, ibuf, psize) \
+  char *p, *e; \
+  inttype quotient; \
+  e = p = end_of_integer_buffer(ibuf); *p = '\0'; \
+  number_printrev_unsigned_radix(p, number, radix, quotient, uc); \
+  *psize = (size_t)(e - p)
+
+char * int32_as_radix (int32_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  int quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_signed_radix(p, number, radix, quotient);
+  SINTTYPE_AS_RADIX(int32_t, number, radix, uc, ibuf, psize);
   return p;
 }
 
-char * intlw_as_radix (intlw_t number, int radix, char **e)
+char * slong_as_radix (long number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  intlw_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_signed_radix(p, number, radix, quotient);
+  SINTTYPE_AS_RADIX(long, number, radix, uc, ibuf, psize);
   return p;
 }
 
-char * int64_as_radix (int64_t number, int radix, char **e)
+/*
+char * ssize_as_radix (ssize_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  int64_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_signed_radix(p, number, radix, quotient);
+  SINTTYPE_AS_RADIX(ssize_t, number, radix, uc, ibuf, psize);
+  return p;
+}
+*/
+
+char * int64_as_radix (int64_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
+{
+  SINTTYPE_AS_RADIX(int64_t, number, radix, uc, ibuf, psize);
   return p;
 }
 
-char * uint32_as_radix (uint32_t number, int radix, char **e)
+char * uint32_as_radix (uint32_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uint32_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_radix(p, number, radix, quotient);
+  UINTTYPE_AS_RADIX(uint32_t, number, radix, uc, ibuf, psize);
   return p;
 }
 
-char * uintlw_as_radix (uintlw_t number, int radix, char **e)
+char * ulong_as_radix (unsigned long number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uintlw_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_radix(p, number, radix, quotient);
+  UINTTYPE_AS_RADIX(unsigned long, number, radix, uc, ibuf, psize);
   return p;
 }
 
-char * uint64_as_radix (uint64_t number, int radix, char **e)
+char * usize_as_radix (size_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uint64_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_radix(p, number, radix, quotient);
+  UINTTYPE_AS_RADIX(size_t, number, radix, uc, ibuf, psize);
+  return p;
+}
+
+char * uint64_as_radix (uint64_t number, int radix, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
+{
+  UINTTYPE_AS_RADIX(uint64_t, number, radix, uc, ibuf, psize);
   return p;
 }
 
@@ -463,7 +478,14 @@ const char * alpha_to_uint32 (const char *s, uint32_t *number)
   return s;
 }
 
-const char * alpha_to_uintlw (const char *s, uintlw_t *number)
+const char * alpha_to_ulong (const char *s, unsigned long *number)
+{
+  int c;
+  string_scan_alpha(s, c, *number, 26);
+  return s;
+}
+
+const char * alpha_to_usize (const char *s, size_t *number)
 {
   int c;
   string_scan_alpha(s, c, *number, 26);
@@ -489,67 +511,40 @@ const char * alpha_to_uint64 (const char *s, uint64_t *number)
     *--p = base26_lc_alphabet[quotient % radix]; \
   }
 
-char * uint32_as_alpha_uc (uint32_t number, char **e)
+#define UINTTYPE_AS_ALPHA(inttype, number, uc, ibuf, psize) \
+  char *p, *e; \
+  inttype quotient; \
+  e = p = end_of_integer_buffer(ibuf); *p = '\0'; \
+  if (uc) { number_printrev_unsigned_alpha_uc(p, number, 26, quotient); } \
+  else { number_printrev_unsigned_alpha_lc(p, number, 26, quotient); } \
+  *psize = (size_t)(e - p)
+
+char * uint32_as_alpha (uint32_t number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uint32_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_alpha_uc(p, number, 26, quotient);
+  UINTTYPE_AS_ALPHA(uint32_t, number, uc, ibuf, psize);
   return p;
 }
 
-char * uint32_as_alpha_lc (uint32_t number, char **e)
+char * ulong_as_alpha (unsigned long number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uint32_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_alpha_lc(p, number, 26, quotient);
+  UINTTYPE_AS_ALPHA(unsigned long, number, uc, ibuf, psize);
   return p;
 }
 
-char * uintlw_as_alpha_uc (uintlw_t number, char **e)
+char * usize_as_alpha (size_t number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uintlw_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_alpha_uc(p, number, 26, quotient);
+  UINTTYPE_AS_ALPHA(size_t, number, uc, ibuf, psize);
   return p;
 }
 
-char * uintlw_as_alpha_lc (uintlw_t number, char **e)
+char * uint64_as_alpha (uint64_t number, int uc, char ibuf[MAX_INTEGER_DIGITS], size_t *psize)
 {
-  char *p;
-  uintlw_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_alpha_lc(p, number, 26, quotient);
+  UINTTYPE_AS_ALPHA(uint64_t, number, uc, ibuf, psize);
   return p;
 }
 
-char * uint64_as_alpha_uc (uint64_t number, char **e)
-{
-  char *p;
-  uint64_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_alpha_uc(p, number, 26, quotient);
-  return p;
-}
-
-char * uint64_as_alpha_lc (uint64_t number, char **e)
-{
-  char *p;
-  uint64_t quotient;
-  p = end_of_integer_buffer; *p = '\0';
-  if (e != NULL) *e = p;
-  number_printrev_unsigned_alpha_lc(p, number, 26, quotient);
-  return p;
-}
-
-/* a variant of alphabetic, a, b, c, ..., z, aa, bb, cc, ..., zz (eg. pdf page labelling) */
+/* a variant of alphabetic, a, b, c, ..., z, aa, bb, cc, ..., zz (eg. pdf page labelling)
+   watch out: unsafe for large numbers; for buffer size N we can handle max. N * 26. */
 
 #define string_scan_alphan(s, c, number, radix) \
   do { \
@@ -560,161 +555,87 @@ char * uint64_as_alpha_lc (uint64_t number, char **e)
     }  \
   } while (0)
 
-const char * alphan_to_uint32 (const char *s, uint32_t *number)
+const char * alphan_to_uint16 (const char *s, uint16_t *number)
 {
   int c;
   string_scan_alphan(s, c, *number, 26);
   return s;
 }
 
-const char * alphan_to_uintlw (const char *s, uintlw_t *number)
-{
-  int c;
-  string_scan_alphan(s, c, *number, 26);
-  return s;
-}
-
-const char * alphan_to_uint64 (const char *s, uintlw_t *number)
-{
-  int c;
-  string_scan_alphan(s, c, *number, 26);
-  return s;
-}
-
-#define number_print_alphan_uc(s, c, number, radix) \
-  if (number > 0) { \
-    for (c = (--number) % radix, number -= c; ; number -= radix) { \
-      *s++ = base26_uc_alphabet[c]; \
-       if (number == 0 || p >= end_of_integer_buffer) break; \
-    } \
+#define number_print_alphan_uc(p, e, c, number, radix) \
+  for (c = (--number) % radix, number -= c; ; number -= radix) { \
+    *p++ = base26_uc_alphabet[c]; \
+     if (number == 0 || p >= e) break; \
   }
 
-#define number_print_alphan_lc(s, c, number, radix) \
-  if (number > 0) { \
-    for (c = (--number) % radix, number -= c; ; number -= radix) { \
-      *s++ = base26_lc_alphabet[c]; \
-       if (number == 0 || p >= end_of_integer_buffer) break; \
-    } \
+#define number_print_alphan_lc(p, e, c, number, radix) \
+  for (c = (--number) % radix, number -= c; ; number -= radix) { \
+    *p++ = base26_lc_alphabet[c]; \
+     if (number == 0 || p >= e) break; \
   }
 
-char * uint32_as_alphan_uc (uint32_t number, char **e)
-{
-  char *p;
-  uint8_t c;
-  p = integer_buffer;
-  number_print_alphan_uc(p, c, number, 26);
-  *p = '\0'; if (e != NULL) *e = p;
-  return integer_buffer;
-}
+#define UINTTYPE_AS_ALPHAN(inttype, number, uc, ibuf, size, psize) \
+  char *p, *e; \
+  uint8_t c; \
+  p = ibuf; \
+  e = p + size; \
+  if (number > 0) { \
+    if (uc) { number_print_alphan_uc(p, e, c, number, 26); } \
+    else { number_print_alphan_lc(p, e, c, number, 26); } \
+  } \
+  *p = '\0'; \
+  *psize = (size_t)(p - ibuf)
 
-char * uint32_as_alphan_lc (uint32_t number, char **e)
+char * uint16_as_alphan (uint16_t number, int uc, char ibuf[], size_t size, size_t *psize)
 {
-  char *p;
-  uint8_t c;
-  p = integer_buffer;
-  number_print_alphan_lc(p, c, number, 26);
-  *p = '\0'; if (e != NULL) *e = p;
-  return integer_buffer;
-}
-
-char * uintlw_as_alphan_uc (uintlw_t number, char **e)
-{
-  char *p;
-  uint8_t c;
-  p = integer_buffer;
-  number_print_alphan_uc(p, c, number, 26);
-  *p = '\0'; if (e != NULL) *e = p;
-  return integer_buffer;
-}
-
-char * uintlw_as_alphan_lc (uintlw_t number, char **e)
-{
-  char *p;
-  uint8_t c;
-  p = integer_buffer;
-  number_print_alphan_lc(p, c, number, 26);
-  *p = '\0'; if (e != NULL) *e = p;
-  return integer_buffer;
-}
-
-char * uint64_as_alphan_uc (uint64_t number, char **e)
-{
-  char *p;
-  uint8_t c;
-  p = integer_buffer;
-  number_print_alphan_uc(p, c, number, 26);
-  *p = '\0'; if (e != NULL) *e = p;
-  return integer_buffer;
-}
-
-char * uint64_as_alphan_lc (uint64_t number, char **e)
-{
-  char *p;
-  uint8_t c;
-  p = integer_buffer;
-  number_print_alphan_lc(p, c, number, 26);
-  *p = '\0'; if (e != NULL) *e = p;
-  return integer_buffer;
+  UINTTYPE_AS_ALPHAN(uint16_t, number, uc, ibuf, size, psize);
+  return ibuf;
 }
 
 /* roman numeral */
 
-/* todo: large roman numerals? http://mathforum.org/library/drmath/view/57569.html */
+/* large roman numerals? http://mathforum.org/library/drmath/view/57569.html */
 
 #define base_roman_uc_alphabet "MDCLXVI"
 #define base_roman_lc_alphabet "mdclxvi"
 
-static const uint32_t base_roman_values[] = { 1000, 500, 100, 50, 10, 5, 1 };
+char * uint16_as_roman (uint16_t number, int uc, char ibuf[MAX_ROMAN_DIGITS], size_t *psize)
+{
+  static const uint32_t base_roman_values[] = { 1000, 500, 100, 50, 10, 5, 1 };
+  const char *alphabet;
+  char *p;
+  uint32_t k, j, v, u;
 
-#define integer_to_roman(p, number, alphabet) \
-  { \
-    uint32_t k, j, v, u; \
-    for (j = 0, v = base_roman_values[0]; number > 0; ) \
-    { \
-      if (number >= v) \
-      { \
-       *p++ = alphabet[j]; \
-       number -= v; \
-       continue; \
-      } \
-      if (j & 1) \
-        k = j + 1; \
-      else \
-        k = j + 2; \
-      u = base_roman_values[k]; \
-      if (number + u >= v) \
-      { \
-        *p++ = alphabet[k]; \
-        number += u; \
-      } \
-      else \
-        v = base_roman_values[++j]; \
-    } \
+  alphabet = uc ? base_roman_uc_alphabet : base_roman_lc_alphabet;
+  for (p = ibuf, j = 0, v = base_roman_values[0]; number > 0; )
+  {
+    if (number >= v)
+    {
+     *p++ = alphabet[j];
+     number -= v;
+     continue;
+    }
+    if (j & 1)
+      k = j + 1;
+    else
+      k = j + 2;
+    u = base_roman_values[k];
+    if (number + u >= v)
+    {
+      *p++ = alphabet[k];
+      number += u;
+    }
+    else
+      v = base_roman_values[++j];
   }
-
-char * uint16_as_roman_uc (uint16_t number, char **e)
-{
-  char *p = integer_buffer;
-  integer_to_roman(p, number, base_roman_uc_alphabet);
-  if (e != NULL)
-    *e = p;
   *p = '\0';
-  return integer_buffer;
-}
-
-char * uint16_as_roman_lc (uint16_t number, char **e)
-{
-  char *p = integer_buffer;
-  integer_to_roman(p, number, base_roman_lc_alphabet);
-  if (e != NULL)
-    *e = p;
-  *p = '\0';
-  return integer_buffer;
+  *psize = (size_t)(p - ibuf);
+  return ibuf;
 }
 
 /* IEEE-754 */
 
-#define BINARY_MODF    1
+#define BINARY_MODF 1
 
 #define NOT_A_NUMBER_STRING "NaN"
 #define INFINITY_STRING "INF"
@@ -956,10 +877,6 @@ const float float_decimal_negpower10[] = {
   ieee_number_decimal(ieee_double_binary_fraction, ieee_number, exponent10, digits, p)
 #define ieee_float_decimal(ieee_number, exponent10, digits, p) \
   ieee_number_decimal(ieee_float_binary_fraction, ieee_number, exponent10, digits, p)
-#define ieee_double_decimal_dot(ieee_number, exponent10, digits, p, dot) \
-  ieee_number_decimal_dot(ieee_double_binary_fraction, ieee_number, exponent10, digits, p, dot)
-#define ieee_float_decimal_dot(ieee_number, exponent10, digits, p, dot) \
-  ieee_number_decimal_dot(ieee_float_binary_fraction, ieee_number, exponent10, digits, p, dot)
 
 #else
 
@@ -972,10 +889,6 @@ const float float_decimal_negpower10[] = {
   ieee_number_decimal(ieee_double_decimal_fraction, ieee_number, exponent10, digits, p)
 #define ieee_float_decimal(ieee_number, exponent10, digits, p) \
   ieee_number_decimal(ieee_float_decimal_fraction, ieee_number, exponent10, digits, p)
-#define ieee_double_decimal_dot(ieee_number, exponent10, digits, p, dot) \
-  ieee_number_decimal_dot(ieee_double_decimal_fraction, ieee_number, exponent10, digits, p, dot)
-#define ieee_float_decimal_dot(ieee_number, exponent10, digits, p, dot) \
-  ieee_number_decimal_dot(ieee_float_decimal_fraction, ieee_number, exponent10, digits, p, dot)
 
 #endif
 
@@ -987,24 +900,6 @@ const float float_decimal_negpower10[] = {
   else \
   { \
     do { *p++ = '0' + (char)method(ieee_number); } while (--exponent10); \
-    *p++ = RADIX_CHAR; \
-  } \
-  for  ( ; digits && ieee_number.fraction; --digits) \
-    *p++ = '0' + (char)method(ieee_number)
-
-#define ieee_number_decimal_dot(method, ieee_number, exponent10, digits, p, dot) \
-  ieee_double_denormalize(ieee_number); \
-  if (ieee_number.sign) *p++ = '-'; \
-  if (exponent10 <= 0) \
-  { \
-    *p++ = '0'; \
-    if (dot != NULL) *dot = p; \
-    for (*p++ = RADIX_CHAR; exponent10 && digits; *p++ = '0', ++exponent10, --digits); \
-  } \
-  else \
-  { \
-    do { *p++ = '0' + (char)method(ieee_number); } while (--exponent10); \
-    if (dot != NULL) *dot = p; \
     *p++ = RADIX_CHAR; \
   } \
   for  ( ; digits && ieee_number.fraction; --digits) \
@@ -1064,15 +959,13 @@ const float float_decimal_negpower10[] = {
 
 /* double to decimal */
 
-static char number_buffer[512];
-
-#define ieee_copy_special_string(special, p, _p) \
-  for (p = (char *)number_buffer, _p = special; ; ++p, ++_p) { \
+#define ieee_copy_special_string(nbuf, special, p, _p) \
+  for (p = nbuf, _p = special; ; ++p, ++_p) { \
     if ((*p = *_p) == '\0') break; \
   }
 
-#define ieee_copy_special_string_re(special, p, _p, r, e) \
-  for (p = (char *)number_buffer, _p = special; ; ++p, ++_p) { \
+#define ieee_copy_special_string_re(nbuf, special, p, _p, r, e) \
+  for (p = nbuf, _p = special; ; ++p, ++_p) { \
     if ((*p = *_p) == '\0') { \
       if (r != NULL) *r = NULL; \
       if (e != NULL) *e = p; \
@@ -1080,107 +973,61 @@ static char number_buffer[512];
     } \
   }
 
-char * double_to_string (double number, int digits)
+char * double_as_string (double number, int digits, char nbuf[MAX_NUMBER_DIGITS], size_t *psize)
 {
   ieee_double ieee_number;
   int exponent10;
   char *s, *p; const char *_p;
+  s = p = nbuf + 1;
   ieee_double_init(ieee_number, number);
   ieee_double_sign(ieee_number);
   if (ieee_double_is_zero(ieee_number)) // to avoid crash on log10(number)
   {
-    ieee_copy_special_string(ieee_double_zero_string(ieee_number), p, _p);
-    return (char *)number_buffer;
+    ieee_copy_special_string(nbuf, ieee_double_zero_string(ieee_number), p, _p);
+    *psize = (size_t)(p - nbuf);
+    return nbuf;
   }
   if (ieee_double_special_case(ieee_number))
   {
-    ieee_copy_special_string(ieee_double_special_string(ieee_number), p, _p);
-    return (char *)number_buffer;
+    ieee_copy_special_string(nbuf, ieee_double_special_string(ieee_number), p, _p);
+    *psize = (size_t)(p - nbuf);
+    return nbuf;
   }
-  s = p = number_buffer + 1;
   ieee_double_exp10(ieee_number, exponent10);
   ieee_double_decimal(ieee_number, exponent10, digits, p);
   ieee_double_round(ieee_number, exponent10, s, p);
   *p = '\0';
-  return s;
-}
-
-char * double_as_string (double number, int digits, char **r, char **e)
-{
-  ieee_double ieee_number;
-  int exponent10;
-  char *s, *p; const char *_p;
-  s = p = number_buffer + 1;
-  ieee_double_init(ieee_number, number);
-  ieee_double_sign(ieee_number);
-  if (ieee_double_is_zero(ieee_number)) // to avoid crash on log10(number)
-  {
-    ieee_copy_special_string_re(ieee_double_zero_string(ieee_number), p, _p, r, e);
-    return (char *)number_buffer;
-  }
-  if (ieee_double_special_case(ieee_number))
-  {
-    ieee_copy_special_string_re(ieee_double_special_string(ieee_number), p, _p, r, e);
-    return (char *)number_buffer;
-  }
-  ieee_double_exp10(ieee_number, exponent10);
-  ieee_double_decimal_dot(ieee_number, exponent10, digits, p, r);
-  ieee_double_round(ieee_number, exponent10, s, p);
-  if (e != NULL) *e = p;
-  *p = '\0';
+  *psize = (size_t)(p - nbuf);
   return s;
 }
 
 /* float to decimal */
 
-char * float_to_string (float number, int digits)
+char * float_as_string (float number, int digits, char nbuf[MAX_NUMBER_DIGITS], size_t *psize)
 {
   ieee_float ieee_number;
   int exponent10;
   char *s, *p; const char *_p;
+  s = p = nbuf + 1;
   ieee_float_init(ieee_number, number);
   ieee_float_sign(ieee_number);
   if (ieee_float_is_zero(ieee_number))
   {
-    ieee_copy_special_string(ieee_float_zero_string(ieee_number), p, _p);
-    return (char *)number_buffer;
+    ieee_copy_special_string(nbuf, ieee_float_zero_string(ieee_number), p, _p);
+    *psize = (size_t)(p - nbuf);
+    return nbuf;
   }
   if (ieee_float_special_case(ieee_number))
   {
-    ieee_copy_special_string(ieee_float_special_string(ieee_number), p, _p);
-    return (char *)number_buffer;
+    ieee_copy_special_string(nbuf, ieee_float_special_string(ieee_number), p, _p);
+    *psize = (size_t)(p - nbuf);
+    return nbuf;
   }
-  s = p = number_buffer + 1;
   ieee_float_exp10(ieee_number, exponent10);
   ieee_float_decimal(ieee_number, exponent10, digits, p);
   ieee_float_round(ieee_number, exponent10, s, p);
   *p = '\0';
-  return s;
-}
-
-char * float_as_string (float number, int digits, char **r, char **e)
-{
-  ieee_float ieee_number;
-  int exponent10;
-  char *s, *p; const char *_p;
-  s = p = number_buffer + 1;
-  ieee_float_init(ieee_number, number);
-  ieee_float_sign(ieee_number);
-  if (ieee_float_is_zero(ieee_number))
-  {
-    ieee_copy_special_string_re(ieee_float_zero_string(ieee_number), p, _p, r, e);
-    return (char *)number_buffer;
-  }
-  if (ieee_float_special_case(ieee_number))
-  {
-    ieee_copy_special_string_re(ieee_float_special_string(ieee_number), p, _p, r, e);
-    return (char *)number_buffer;
-  }
-  ieee_float_exp10(ieee_number, exponent10);
-  ieee_float_decimal_dot(ieee_number, exponent10, digits, p, r);
-  ieee_float_round(ieee_number, exponent10, s, p);
-  if (e != NULL) *e = p;
-  *p = '\0';
+  *psize = (size_t)(p - nbuf);
   return s;
 }
 
