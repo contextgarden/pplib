@@ -515,10 +515,17 @@ static void SHA256_Transform(SHA256_CTX *context, const uint32_t idata[16]) {
 
 /* PJ: alignment-safe version */
 
+#define data_aligned4(data) (((data - (const uint8_t *)(0UL)) & 3) == 0)
+#define data_aligned8(data) (((data - (const uint8_t *)(0ULL)) & 7) == 0)
+
 static void SHA256_TransformAligned(SHA256_CTX *context, const uint8_t *data) {
-  uint32_t idata[16];
-  memcpy(&idata[0], data, 16 * sizeof(uint32_t));
-  SHA256_Transform(context, idata);
+  if (data_aligned4(data)) {
+    SHA256_Transform(context, (const uint32_t *)data);
+  } else {
+    uint32_t idata[16];
+    memcpy(&idata[0], data, 16 * sizeof(uint32_t));
+    SHA256_Transform(context, idata);
+  }
 }
 
 static void SHA256_Update(SHA256_CTX *context, const uint8_t *data, size_t len) {
@@ -844,9 +851,13 @@ static void SHA512_Transform(SHA512_CTX *context, const uint64_t idata[16]) {
 #endif /* SHA2_UNROLL_TRANSFORM */
 
 static void SHA512_TransformAligned(SHA512_CTX *context, const uint8_t *data) {
-  uint64_t idata[16];
-  memcpy(&idata[0], data, 16 * sizeof(uint64_t));
-  SHA512_Transform(context, idata);
+  if (data_aligned8(data)) {
+    SHA512_Transform(context, (const uint64_t *)data);
+  } else {
+    uint64_t idata[16];
+    memcpy(&idata[0], data, 16 * sizeof(uint64_t));
+    SHA512_Transform(context, idata);
+  }
 }
 
 static void SHA512_Update(SHA512_CTX *context, const uint8_t *data, size_t len) {
