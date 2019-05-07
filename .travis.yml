@@ -11,7 +11,15 @@ matrix:
   include:
     - os: linux
       compiler: clang
+      addons:
+        apt:
+          packages:
+          - zlib1g-dev
     - os: linux
       compiler: gcc
+      addons:
+        apt:
+          packages:
+          - zlib1g-dev
     - os: osx
       compiler: clang
