@@ -208,7 +208,7 @@ UTILAPI char * uint64_as_alpha (uint64_t number, int uc, char ibuf[MAX_INTEGER_D
 #  define uintlw_as_alpha(number, uc, ibuf, psize) uint64_as_alpha(number, uc, ibuf, psize)
 #  define uintlw_to_alpha(number, uc, psize) uint64_to_alpha(number, uc, ibuf, psize)
 
-#elif INTLW_IS_LONG
+#elif defined(INTLW_IS_LONG)
 
 #  define string_to_intlw(s, number) string_to_slong(s, number)
 #  define string_to_uintlw(s, number) string_to_ulong(s, number)

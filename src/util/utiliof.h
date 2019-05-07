@@ -527,7 +527,7 @@ UTILAPI int iof_get_uint64_radix (iof *I, uint64_t *number, int radix);
 #  define iof_get_uintlw(I, number) iof_get_uint64(I, number)
 #  define iof_get_intlw_radix(I, number, radix) iof_get_int64_radix(I, number, radix)
 #  define iof_get_uintlw_radix(I, number, radix) iof_get_uint64_radix(I, number, radix)
-#elif INTLW_IS_LONG
+#elif defined(INTLW_IS_LONG)
 #  define iof_get_intlw(I, number) iof_get_slong(I, number)
 #  define iof_get_uintlw(I, number) iof_get_ulong(I, number)
 #  define iof_get_intlw_radix(I, number, radix) iof_get_slong_radix(I, number, radix)
@@ -567,7 +567,7 @@ UTILAPI size_t iof_put_uint64_radix (iof *O, uint64_t number, int radix, int uc)
 #  define iof_put_uintlw(O, number) iof_put_uint64(O, number)
 #  define iof_put_intlw_radix(O, number, radix, uc) iof_put_int64_radix(O, number, radix, uc)
 #  define iof_put_uintlw_radix(O, number, radix, uc) iof_put_uint64_radix(O, number, radix, uc)
-#elif
+#else
 #  define iof_put_intlw(O, number) iof_put_slong(O, number)
 #  define iof_put_uintlw(O, number) iof_put_ulong(O, number)
 #  define iof_put_intlw_radix(O, number, radix, uc) iof_put_slong_radix(O, number, radix, uc)
