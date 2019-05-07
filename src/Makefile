@@ -44,7 +44,7 @@ PPSTATICOBJ=$(patsubst %, $(OUTDIR)/%$(OBJEXT), $(PPMODULES))
 PPSTATICLIB=$(OUTDIR)/libpp.static$(BUILDSUFFIX).a
 
 # dependencies
-FLATEDIR=zlib
+FLATEDIR=../zlib
 FLATELIB=$(FLATEDIR)/libz.static$(BUILDSUFFIX).a
 PPSTATICDEPS=$(FLATELIB)
 
