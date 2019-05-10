@@ -97,7 +97,7 @@ target_include_directories(pplib
 )
 
 if (MSVC)
-    set(warning_flags /W4 /WX)
+    set(warning_flags '') # /W4 /WX
 else (MSVC)
     set(warning_flags
         -Wall
