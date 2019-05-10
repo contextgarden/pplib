@@ -30,3 +30,7 @@ jobs:
     displayName: 'CMake ..'
     inputs:
       cmakeArgs: '..'
+  - task: CMake@1
+    displayName: 'CMake --build . --config Debug'
+    inputs:
+      cmakeArgs: '--build . --config Debug'
