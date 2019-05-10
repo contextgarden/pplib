@@ -97,7 +97,7 @@ target_include_directories(pplib
 )
 
 if (MSVC)
-    set(warning_flags '') # /W4 /WX
+    #set(warning_flags '') # /W4 /WX
 else (MSVC)
     set(warning_flags
         -Wall
@@ -110,11 +110,11 @@ else (MSVC)
         -Wpointer-arith
         -Wwrite-strings
     )
+    
+    foreach(target pplib_utils pplib_filters pplib)
+        target_compile_options(${target} PRIVATE ${warning_flags})
+    endforeach()
 endif (MSVC)
-
-foreach(target pplib_utils pplib_filters pplib)
-    target_compile_options(${target} PRIVATE ${warning_flags})
-endforeach()
 
 set_target_properties(pplib
     PROPERTIES
