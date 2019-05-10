@@ -24,6 +24,8 @@ jobs:
     vmImage: $(imageName)
 
   steps:
+  - checkout: self
+    submodules: recursive
   - task: CMake@1
     displayName: 'CMake ..'
     inputs:
