@@ -1,4 +1,3 @@
-
 /*
 Allocators
 ==========
@@ -312,11 +311,19 @@ Each allocator has 4 variants for 1, 2, 4, 8 bytes alignment respectively. Eg. s
 to 4 bytes, heap64_take() returns a pointer aligned to 8 bytes. You can ask for any data length, but in practise you'll always
 obtain 1N, 2N, 4N or 8N. Alignment implies data padding unless the user requests for "aligned" sizes. In statistics the padding
 is not considered a waste.
-
 */
 
 #ifndef UTIL_MEM_ALLC_C
 #define UTIL_MEM_ALLC_C
+
+/*
+Common internals for allocators suite. A selection or all of the following defines (from api headers) should already be there:
+
+	UTIL_MEM_HEAP_H  // utilmemheap.h
+	UTIL_MEM_STOCK_H // utilmemstock.h
+	UTIL_MEM_POOL_H  // utilmempool.h
+
+*/
 
 #include <string.h> // memset()
 #include <stdio.h> // printf()
@@ -411,8 +418,6 @@ otherwise it needs 4 bytes offset.
 #define pointer_aligned32(p) ((pointer_tointeger(p) & 3) == 0)
 #define pointer_aligned64(p) ((pointer_tointeger(p) & 7) == 0)
 
-/* cast from data to ghost structure goes via (void *) to shut up warnigns, we ensure the alignment is ok */
-
 #define void_data(data) ((void *)(data))
 #define byte_data(data) ((uint8_t *)(data))
 
@@ -449,10 +454,6 @@ otherwise it needs 4 bytes offset.
 #define block_used32(block) (block->data - block_edge32(block))
 #define block_used64(block) (block->data - block_edge64(block))
 
-/* ghost offset from block top; not from bottom because we must not exceed offset limit */
-
-#define ghost_offset(block, ghost) (byte_data(ghost) - block_top(block))
-
 /* align requested size to keep ream->data / pyre->data always aligned */
 
 #define align_size8(size) (void)size
@@ -460,9 +461,19 @@ otherwise it needs 4 bytes offset.
 #define align_size32(size) ((void)((size & 3) ? (size += 4 - (size & 3)) : 0))
 #define align_size64(size) ((void)((size & 7) ? (size += 8 - (size & 7)) : 0))
 
+/* handling ghost structure (stock and pool) */
+
+#if defined(UTIL_MEM_STOCK_H) || defined(UTIL_MEM_POOL_H)
+
+/* ghost offset from block top; not from bottom because we must not exceed offset limit */
+
+#define ghost_offset(block, ghost) (byte_data(ghost) - block_top(block))
+
 /* ghost <-> data */
 
 #define ghost_data(ghost) ((void *)(ghost + 1))
+
+/* cast from data to ghost structure goes via (void *) to shut up warnigns, alignment ok */
 
 #define data_ghost8(data)  (((ghost8 *)void_data(data)) - 1)
 #define data_ghost16(data) (((ghost16 *)void_data(data)) - 1)
@@ -482,28 +493,16 @@ otherwise it needs 4 bytes offset.
 
 /* ghost init */
 
-#define ghost_init8(block, ghost) ((ghost = block->dataghost), (ghost->offset = 0))
-#define ghost_init16(block, ghost) ((ghost = block->dataghost), (ghost->offset = 0))
 #define ghost_next8(block, ghost) ((ghost = block->dataghost), (ghost->offset = (uint8_t)ghost_offset(block, ghost)))
 #define ghost_next16(block, ghost) ((ghost = block->dataghost), (ghost->offset = (uint16_t)ghost_offset(block, ghost)))
-
-// watch out: init() and next() look the same, but used in different context
 #ifdef BIT32
-#  define ghost_init32(bl0ck, ghost) ((ghost = bl0ck->dataghost), (ghost->block = bl0ck))
 #  define ghost_next32(bl0ck, ghost) ((ghost = bl0ck->dataghost), (ghost->block = bl0ck))
 #else
-#  define ghost_init32(block, ghost) ((ghost = block->dataghost), (ghost->offset = 0))
 #  define ghost_next32(block, ghost) ((ghost = block->dataghost), (ghost->offset = (uint32_t)ghost_offset(block, ghost)))
 #endif
-#define ghost_init64(bl0ck, ghost) ((ghost = bl0ck->dataghost), (ghost->block = bl0ck))
 #define ghost_next64(bl0ck, ghost) ((ghost = bl0ck->dataghost), (ghost->block = bl0ck))
 
-/* block init */
-
-#define block_init8(block,  ghost) ((block->data = block_edge8(block)),  ghost_init8(block, ghost))
-#define block_init16(block, ghost) ((block->data = block_edge16(block)), ghost_init16(block, ghost))
-#define block_init32(block, ghost) ((block->data = block_edge32(block)), ghost_init32(block, ghost))
-#define block_init64(block, ghost) ((block->data = block_edge64(block)), ghost_init64(block, ghost))
+#endif
 
 /* average block chunk size */
 
