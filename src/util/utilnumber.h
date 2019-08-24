@@ -183,7 +183,7 @@ UTILAPI char * uint64_as_alpha (uint64_t number, int uc, char ibuf[MAX_INTEGER_D
 #define usize_to_alpha(number, uc, psize)  usize_as_alpha(number, uc, util_number_buffer, psize)
 #define uint64_to_alpha(number, uc, psize) uint64_as_alpha(number, uc, util_number_buffer, psize)
 
-#ifdef INTLW_IS_INT64
+#if defined(INTLW_IS_INT64)
 
 #  define string_to_intlw(s, number) string_to_int64(s, number)
 #  define string_to_uintlw(s, number) string_to_uint64(s, number)
