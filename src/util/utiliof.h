@@ -562,12 +562,12 @@ UTILAPI size_t iof_put_ulong_radix (iof *O, unsigned long number, int radix, int
 UTILAPI size_t iof_put_usize_radix  (iof *O, size_t number,   int radix, int uc);
 UTILAPI size_t iof_put_uint64_radix (iof *O, uint64_t number, int radix, int uc);
 
-#ifdef INTLW_IS_INT64
+#if defined(INTLW_IS_INT64)
 #  define iof_put_intlw(O, number) iof_put_int64(O, number)
 #  define iof_put_uintlw(O, number) iof_put_uint64(O, number)
 #  define iof_put_intlw_radix(O, number, radix, uc) iof_put_int64_radix(O, number, radix, uc)
 #  define iof_put_uintlw_radix(O, number, radix, uc) iof_put_uint64_radix(O, number, radix, uc)
-#elif
+#elif defined(INTLW_IS_LONG)
 #  define iof_put_intlw(O, number) iof_put_slong(O, number)
 #  define iof_put_uintlw(O, number) iof_put_ulong(O, number)
 #  define iof_put_intlw_radix(O, number, radix, uc) iof_put_slong_radix(O, number, radix, uc)
