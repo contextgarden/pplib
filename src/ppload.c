@@ -390,7 +390,7 @@ static ppstring ppscan_string (iof *I, ppheap **pheap)
         case NEWLINE_CHAR_CASE: // not a part of the string, ignore (pdf spec page 55)
           break;
         case '(': case ')': case '\\':
-        default: // for enything else backslash is ignored (pdf spec page 54)
+        default: // for anything else backslash is ignored (pdf spec page 54)
           iof_put(O, *p);
           break;
       }
@@ -490,7 +490,7 @@ ppstring ppstring_internal (const void *data, size_t size, ppheap **pheap)
 /* PDF spec says nothing about base85 strings, but streams might be (afair no leading '<~' but present trailing '~>') */
 
 static ppstring ppscan_base85 (iof *I, ppheap **pheap)
-{ // bawse85 alphabet is 33.117, adobe also hires 'z' and 'y' for compression
+{ // base85 alphabet is 33..117, adobe also hires 'z' and 'y' for compression
   int c;
   iof *O, B;
   _ppstring *ghost1, *ghost2;

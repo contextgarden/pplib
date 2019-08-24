@@ -94,16 +94,16 @@ extern const int base16_lookup[];
 #define base8_value(c)  (base8_digit(c) ? (c) - '0' : -1)
 
 #define base10_digit(c) ((unsigned)(c - '0') <= (unsigned)('9' - '0'))
-#define base10_value(c) (base10_lookup[(uint8_t)c])
+#define base10_value(c) (base10_lookup[(uint8_t)(c)])
 
-#define base16_digit(c) (base16_lookup[(uint8_t)c] >= 0)
-#define base16_value(c) (base16_lookup[(uint8_t)c])
+#define base16_digit(c) (base16_lookup[(uint8_t)(c)] >= 0)
+#define base16_value(c) (base16_lookup[(uint8_t)(c)])
 
-#define base26_digit(c) (base26_lookup[(uint8_t)c] >= 0)
-#define base26_value(c) (base26_lookup[(uint8_t)c])
+#define base26_digit(c) (base26_lookup[(uint8_t)(c)] >= 0)
+#define base26_value(c) (base26_lookup[(uint8_t)(c)])
 
-#define base36_digit(c) (base36_lookup[(uint8_t)c] >= 0)
-#define base36_value(c) (base36_lookup[(uint8_t)c])
+#define base36_digit(c) (base36_lookup[(uint8_t)(c)] >= 0)
+#define base36_value(c) (base36_lookup[(uint8_t)(c)])
 
 //#define base_digit(c, radix) ((unsigned)(base36_lookup[c]) < (unsigned)(radix))
 //#define base_value(c, radix) (base_digit(c, radix) ? base36_lookup[c] : -1)
@@ -267,10 +267,39 @@ UTILAPI const char * convert_to_float  (const char *s, float *number);
 
 /* binary data parsers helpers */
 
-#define get_byte1(i) ((i)&255)
-#define get_byte2(i) (((i)>>8)&255)
-#define get_byte3(i) (((i)>>16)&255)
-#define get_byte4(i) (((i)>>24)&255)
+#if 0 // masking gives more overactive warnings
+#define get_number_byte1(n) ((n) & 0x000000ffu)
+#define get_number_byte2(n) (((n) & 0x0000ff00u) >> 8)
+#define get_number_byte3(n) (((n) & 0x00ff0000u) >> 16)
+#define get_number_byte4(n) (((n) & 0xff000000u) >> 24)
+#define get_number_byte5(n) (((n) & 0x000000ff00000000ull) >> 32)
+#define get_number_byte6(n) (((n) & 0x0000ff0000000000ull) >> 40)
+#define get_number_byte7(n) (((n) & 0x00ff000000000000ull) >> 48)
+#define get_number_byte8(n) (((n) & 0xff00000000000000ull) >> 56)
+#else
+#define get_number_byte1(n) ((n) & 0xff)
+#define get_number_byte2(n) (((n) >> 8) & 0xff)
+#define get_number_byte3(n) (((n) >> 16) & 0xff)
+#define get_number_byte4(n) (((n) >> 24) & 0xff)
+#define get_number_byte5(n) (((n) >> 32) & 0xff)
+#define get_number_byte6(n) (((n) >> 40) & 0xff)
+#define get_number_byte7(n) (((n) >> 48) & 0xff)
+#define get_number_byte8(n) (((n) >> 56) & 0xff)
+#endif
+
+#define get_number_bytes_be1(n, b) (b[0] = (uint8_t)get_number_byte1(n))
+#define get_number_bytes_be2(n, b) (b[0] = (uint8_t)get_number_byte2(n), b[1] = (uint8_t)get_number_byte1(n))
+#define get_number_bytes_be3(n, b) (b[0] = (uint8_t)get_number_byte3(n), b[1] = (uint8_t)get_number_byte2(n), b[2] = (uint8_t)get_number_byte1(n))
+#define get_number_bytes_be4(n, b) (b[0] = (uint8_t)get_number_byte4(n), b[1] = (uint8_t)get_number_byte3(n), b[2] = (uint8_t)get_number_byte2(n), b[3] = (uint8_t)get_number_byte1(n))
+
+#define get_number_bytes_be5(n, b) (b[0] = (uint8_t)get_number_byte5(n), b[1] = (uint8_t)get_number_byte4(n), b[2] = (uint8_t)get_number_byte3(n), b[3] = (uint8_t)get_number_byte2(n), \
+                                    b[4] = (uint8_t)get_number_byte1(n))
+#define get_number_bytes_be6(n, b) (b[0] = (uint8_t)get_number_byte6(n), b[1] = (uint8_t)get_number_byte5(n), b[2] = (uint8_t)get_number_byte4(n), b[3] = (uint8_t)get_number_byte3(n), \
+                                    b[4] = (uint8_t)get_number_byte2(n), b[5] = (uint8_t)get_number_byte1(n))
+#define get_number_bytes_be7(n, b) (b[0] = (uint8_t)get_number_byte7(n), b[1] = (uint8_t)get_number_byte6(n), b[2] = (uint8_t)get_number_byte5(n), b[3] = (uint8_t)get_number_byte4(n), \
+                                    b[4] = (uint8_t)get_number_byte3(n), b[5] = (uint8_t)get_number_byte2(n), b[6] = (uint8_t)get_number_byte1(n))
+#define get_number_bytes_be8(n, b) (b[0] = (uint8_t)get_number_byte8(n), b[1] = (uint8_t)get_number_byte7(n), b[2] = (uint8_t)get_number_byte6(n), b[3] = (uint8_t)get_number_byte5(n), \
+                                    b[4] = (uint8_t)get_number_byte4(n), b[5] = (uint8_t)get_number_byte3(n), b[6] = (uint8_t)get_number_byte2(n), b[7] = (uint8_t)get_number_byte1(n))
 
 #define read_uint16be_as(s, int_type) ((int_type)((s[0]<<8)|s[1]))
 #define read_uint32be_as(s, int_type) ((int_type)((s[0]<<24)|(s[1]<<16)|(s[2]<<8)|s[3]))

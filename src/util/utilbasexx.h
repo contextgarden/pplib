@@ -92,24 +92,6 @@ iof_status runlength_encode_state (iof *I, iof *O, runlength_state *state);
 iof_status runlength_decode (iof *I, iof *O);
 iof_status runlength_decode_state (iof *I, iof *O, runlength_state *state);
 
-/* eexec */
-
-typedef struct eexec_state eexec_state;
-
-#define EEXEC_MAXLINE 80
-
-void eexec_state_init_ln (eexec_state *state, size_t line, size_t maxline, const char *initbytes);
-#define eexec_state_init(state) eexec_state_init_ln(state, 0, EEXEC_MAXLINE, NULL)
-
-iof_status eexec_decode (iof *I, iof *O);
-iof_status eexec_decode_state (iof *I, iof *O, eexec_state *state);
-
-iof_status eexec_encode (iof *I, iof *O, size_t line, size_t maxline);
-iof_status eexec_encode_state (iof *I, iof *O, eexec_state *state);
-
-iof_status type1_charstring_decode (void *data, size_t size, void *outdata, uint8_t leniv);
-iof_status type1_charstring_encode (void *data, size_t size, void *outdata, uint8_t leniv);
-
 /* filters */
 
 int iof_filter_basexx_encoder_ln (iof *N, size_t line, size_t maxline);
@@ -125,9 +107,5 @@ iof * iof_filter_base85_encoder (iof *N);
 
 iof * iof_filter_runlength_decoder (iof *N);
 iof * iof_filter_runlength_encoder (iof *N);
-
-iof * iof_filter_eexec_decoder (iof *N);
-iof * iof_filter_eexec_encoder (iof *N);
-
 
 #endif

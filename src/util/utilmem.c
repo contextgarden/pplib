@@ -49,9 +49,8 @@ allocated -- flag indicating if *data has been allocated (with malloc)
 void util_resize (void **data, size_t unit, size_t size, size_t extra, size_t *space, int allocated)
 {
   if (*space == 0)
-    *space = 4; // ... better keep *space non-zero to avoid it
-  do { *space <<= 1; }
-  while (size + extra > *space);
+    *space = 4; // better keep *space non-zero to avoid it
+  do { *space <<= 1; } while (size + extra > *space);
 
   if (allocated)
   {

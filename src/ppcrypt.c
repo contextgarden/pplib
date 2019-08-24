@@ -115,10 +115,10 @@ static void ppcrypt_filekey (ppcrypt *crypt, const void *ownerkey, size_t ownerk
   md5_digest_add(&md5, crypt->userpass, 32);
   md5_digest_add(&md5, ownerkey, ownerkeysize);
   p = (uint32_t)crypt->permissions;
-  permissions[0] = get_byte1(p);
-  permissions[1] = get_byte2(p);
-  permissions[2] = get_byte3(p);
-  permissions[3] = get_byte4(p);
+  permissions[0] = get_number_byte1(p);
+  permissions[1] = get_number_byte2(p);
+  permissions[2] = get_number_byte3(p);
+  permissions[3] = get_number_byte4(p);
   md5_digest_add(&md5, permissions, 4);
   md5_digest_add(&md5, id, idsize);
   if (crypt->algorithm_revision >= 4 && (crypt->flags & PPCRYPT_NO_METADATA))
@@ -421,11 +421,11 @@ static void ppcrypt_strkey (ppcrypt *crypt, ppref *ref, int aes)
 
   if (crypt->algorithm_variant < 5)
   {
-    crypt->filekey[crypt->filekeylength + 0] = get_byte1(ref->number);
-    crypt->filekey[crypt->filekeylength + 1] = get_byte2(ref->number);
-    crypt->filekey[crypt->filekeylength + 2] = get_byte3(ref->number);
-    crypt->filekey[crypt->filekeylength + 3] = get_byte1(ref->version);
-    crypt->filekey[crypt->filekeylength + 4] = get_byte2(ref->version);
+    crypt->filekey[crypt->filekeylength + 0] = get_number_byte1(ref->number);
+    crypt->filekey[crypt->filekeylength + 1] = get_number_byte2(ref->number);
+    crypt->filekey[crypt->filekeylength + 2] = get_number_byte3(ref->number);
+    crypt->filekey[crypt->filekeylength + 3] = get_number_byte1(ref->version);
+    crypt->filekey[crypt->filekeylength + 4] = get_number_byte2(ref->version);
 
     if (aes)
     {
@@ -498,11 +498,11 @@ ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, ppheap **pheap)
 
   if (crypt->algorithm_variant < 5)
   {
-    crypt->filekey[crypt->filekeylength + 0] = get_byte1(ref->number);
-    crypt->filekey[crypt->filekeylength + 1] = get_byte2(ref->number);
-    crypt->filekey[crypt->filekeylength + 2] = get_byte3(ref->number);
-    crypt->filekey[crypt->filekeylength + 3] = get_byte1(ref->version);
-    crypt->filekey[crypt->filekeylength + 4] = get_byte2(ref->version);
+    crypt->filekey[crypt->filekeylength + 0] = get_number_byte1(ref->number);
+    crypt->filekey[crypt->filekeylength + 1] = get_number_byte2(ref->number);
+    crypt->filekey[crypt->filekeylength + 2] = get_number_byte3(ref->number);
+    crypt->filekey[crypt->filekeylength + 3] = get_number_byte1(ref->version);
+    crypt->filekey[crypt->filekeylength + 4] = get_number_byte2(ref->version);
 
     if (aes)
     {

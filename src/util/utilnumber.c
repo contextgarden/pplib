@@ -4,6 +4,10 @@
 
 #include "utilnumber.h"
 
+// todo: lookups can be chars
+// change lookup arrays to some __name to discourage accessing them directly; they always should be accessed via macros; base16_value() base16_digit()
+// 
+
 const int base10_lookup[] = {
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -978,7 +982,7 @@ char * double_as_string (double number, int digits, char nbuf[MAX_NUMBER_DIGITS]
   ieee_double ieee_number;
   int exponent10;
   char *s, *p; const char *_p;
-  s = p = nbuf + 1;
+  s = p = nbuf + 1; // for sign/rounding
   ieee_double_init(ieee_number, number);
   ieee_double_sign(ieee_number);
   if (ieee_double_is_zero(ieee_number)) // to avoid crash on log10(number)
@@ -997,7 +1001,7 @@ char * double_as_string (double number, int digits, char nbuf[MAX_NUMBER_DIGITS]
   ieee_double_decimal(ieee_number, exponent10, digits, p);
   ieee_double_round(ieee_number, exponent10, s, p);
   *p = '\0';
-  *psize = (size_t)(p - nbuf);
+  *psize = (size_t)(p - s);
   return s;
 }
 
@@ -1008,7 +1012,7 @@ char * float_as_string (float number, int digits, char nbuf[MAX_NUMBER_DIGITS], 
   ieee_float ieee_number;
   int exponent10;
   char *s, *p; const char *_p;
-  s = p = nbuf + 1;
+  s = p = nbuf + 1; // for sign/rounding
   ieee_float_init(ieee_number, number);
   ieee_float_sign(ieee_number);
   if (ieee_float_is_zero(ieee_number))
@@ -1027,7 +1031,7 @@ char * float_as_string (float number, int digits, char nbuf[MAX_NUMBER_DIGITS], 
   ieee_float_decimal(ieee_number, exponent10, digits, p);
   ieee_float_round(ieee_number, exponent10, s, p);
   *p = '\0';
-  *psize = (size_t)(p - nbuf);
+  *psize = (size_t)(p - s);
   return s;
 }
 

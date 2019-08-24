@@ -19,15 +19,6 @@ struct runlength_state {
   uint8_t *pos;
 };
 
-struct eexec_state {
-  int key;
-  int flush;
-  int binary;
-  int c1;
-  size_t line, maxline; /* ascii encoder only */
-  const char *initbytes;
-};
-
 /* config */
 
 #if defined(BASEXX_PDF)
@@ -230,11 +221,11 @@ int base16_getc (iof *I)
   do { c2 = iof_get(I); } while (ignored(c2));
   if (base16_eof(c2))
   {
-    if ((c1 = base16_lookup[c1]) == -1)
+    if ((c1 = base16_value(c1)) < 0)
       return IOFERR;
     return c1<<4;
   }
-  if ((c1 = base16_lookup[c1]) == -1 || (c2 = base16_lookup[c2]) == -1)
+  if ((c1 = base16_value(c1)) < 0 || (c2 = base16_value(c2)) < 0)
     return IOFERR;
   return (c1<<4)|c2;
 }
@@ -265,12 +256,12 @@ iof_status base16_decode (iof *I, iof *O)
     do { c2 = iof_get(I); } while (ignored(c2));
     if (base16_eof(c2))
     {
-      if ((c1 = base16_lookup[c1]) == -1)
+      if ((c1 = base16_value(c1)) < 0)
         return IOFERR;
       iof_set(O, c1<<4); // c2 := '0'
       return IOFEOF;
     }
-    if ((c1 = base16_lookup[c1]) == -1 || (c2 = base16_lookup[c2]) == -1)
+    if ((c1 = base16_value(c1)) < 0 || (c2 = base16_value(c2)) < 0)
       return IOFERR;
     iof_set(O, (c1<<4)|c2);
   }
@@ -300,14 +291,14 @@ iof_status base16_decode_state (iof *I, iof *O, basexx_state *state)
       set_tail1(state, c1); /* set tail to let the caller display invalid chars */
       if (state->flush)
       {
-        if ((c1 = base16_lookup[c1]) == -1)
+        if ((c1 = base16_value(c1)) < 0)
           return IOFERR;
         iof_set(O, c1<<4); // c2 := '0'
         return IOFEOF;
       }
       return IOFEMPTY;
     }
-    if ((d1 = base16_lookup[c1]) == -1 || (d2 = base16_lookup[c2]) == -1)
+    if ((d1 = base16_value(c1)) < 0 || (d2 = base16_value(c2)) < 0)
     {
       set_tail2(state, c1, c2);
       return IOFERR;
@@ -339,6 +330,8 @@ const int base64_lookup[] = {
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 };
+
+#define base64_value(c) base64_lookup[(uint8_t)(c)]
 
 #define base64_digit1(c1)     base64_alphabet[c1>>2]
 #define base64_digit2(c1, c2) base64_alphabet[((c1&3)<<4)|(c2>>4)]
@@ -552,7 +545,7 @@ iof_status base64_decode (iof *I, iof *O)
     do { c3 = iof_get(I); } while (ignored(c3));
     if (base64_eof(c3))
     {
-      if ((c1 = base64_lookup[c1]) == -1 || (c2 = base64_lookup[c2]) == -1)
+      if ((c1 = base64_value(c1)) < 0 || (c2 = base64_value(c2)) < 0)
         return IOFERR;
       base64_decode_tail2(O, c1, c2);
       return IOFEOF;
@@ -560,13 +553,13 @@ iof_status base64_decode (iof *I, iof *O)
     do { c4 = iof_get(I); } while (ignored(c4));
     if (base64_eof(c4))
     {
-      if ((c1 = base64_lookup[c1]) == -1 || (c2 = base64_lookup[c2]) == -1 || (c3 = base64_lookup[c3]) == -1)
+      if ((c1 = base64_value(c1)) < 0 || (c2 = base64_value(c2)) < 0 || (c3 = base64_value(c3)) < 0)
         return IOFERR;
       base64_decode_tail3(O, c1, c2, c3);
       return IOFEOF;
     }
-    if ((c1 = base64_lookup[c1]) == -1 || (c2 = base64_lookup[c2]) == -1 ||
-        (c3 = base64_lookup[c3]) == -1 || (c4 = base64_lookup[c4]) == -1)
+    if ((c1 = base64_value(c1)) < 0 || (c2 = base64_value(c2)) < 0 ||
+        (c3 = base64_value(c3)) < 0 || (c4 = base64_value(c4)) < 0)
           return IOFERR;
     base64_decode_word(O, c1, c2, c3, c4);
   }
@@ -604,7 +597,7 @@ iof_status base64_decode_state (iof *I, iof *O, basexx_state *state)
       set_tail2(state, c1, c2);
       if (state->flush)
       {
-        if ((c1 = base64_lookup[c1]) == -1 || (c2 = base64_lookup[c2]) == -1)
+        if ((c1 = base64_value(c1)) < 0 || (c2 = base64_value(c2)) < 0)
           return IOFERR;
         base64_decode_tail2(O, c1, c2);
         return IOFEOF;
@@ -619,7 +612,7 @@ iof_status base64_decode_state (iof *I, iof *O, basexx_state *state)
       set_tail3(state, c1, c2, c3);
       if (state->flush)
       {
-        if ((c1 = base64_lookup[c1]) == -1 || (c2 = base64_lookup[c2]) == -1 || (c3 = base64_lookup[c3]) == -1)
+        if ((c1 = base64_value(c1)) < 0 || (c2 = base64_value(c2)) < 0 || (c3 = base64_value(c3)) < 0)
           return IOFERR;
         base64_decode_tail3(O, c1, c2, c3);
         return IOFEOF;
@@ -627,8 +620,8 @@ iof_status base64_decode_state (iof *I, iof *O, basexx_state *state)
       else
         return IOFEMPTY;
     }
-    if ((d1 = base64_lookup[c1]) == -1 || (d2 = base64_lookup[c2]) == -1 ||
-        (d3 = base64_lookup[c3]) == -1 || (d4 = base64_lookup[c4]) == -1)
+    if ((d1 = base64_value(c1)) < 0 || (d2 = base64_value(c2)) < 0 ||
+        (d3 = base64_value(c3)) < 0 || (d4 = base64_value(c4)) < 0)
     {
       set_tail4(state, c1, c2, c3, c4);
       return IOFERR;
@@ -660,6 +653,8 @@ const int base85_lookup[] = {
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 };
+
+#define base85_value(c) base85_lookup[(uint8_t)(c)]
 
 #define base85_encode_word(O, code) \
   (*(O->pos+4) = '!' + code%85, code /= 85, *(O->pos+3) = '!' + code%85, code /= 85, \
@@ -1038,7 +1033,7 @@ iof_status base85_decode (iof *I, iof *O)
     do { c3 = iof_get(I); } while (ignored(c3));
     if (base85_eof(c3))
     {
-      if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1)
+      if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0)
         return IOFERR;
       code = base85_code(c1, c2, 84, 84, 84); /* padding with 'u' (117); 117-33 = 84 */
       iof_set(O, code>>24);
@@ -1047,7 +1042,7 @@ iof_status base85_decode (iof *I, iof *O)
     do { c4 = iof_get(I); } while (ignored(c4));
     if (base85_eof(c4))
     {
-      if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1 || (c3 = base85_lookup[c3]) == -1)
+      if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 || (c3 = base85_value(c3)) < 0)
         return IOFERR;
       code = base85_code(c1, c2, c3, 84, 84);
       iof_set2(O, code>>24, (code>>16)&255);
@@ -1056,15 +1051,15 @@ iof_status base85_decode (iof *I, iof *O)
     do { c5 = iof_get(I); } while (ignored(c5));
     if (base85_eof(c5))
     {
-      if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1 ||
-          (c3 = base85_lookup[c3]) == -1 || (c4 = base85_lookup[c4]) == -1)
+      if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 ||
+          (c3 = base85_value(c3)) < 0 || (c4 = base85_value(c4)) < 0)
         return IOFERR;
       code = base85_code(c1, c2, c3, c4, 84);
       iof_set3(O, code>>24, (code>>16)&255, (code>>8)&255);
       return IOFEOF;
     }
-    if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1 || (c3 = base85_lookup[c3]) == -1 ||
-        (c4 = base85_lookup[c4]) == -1 || (c5 = base85_lookup[c5]) == -1)
+    if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 || (c3 = base85_value(c3)) < 0 ||
+        (c4 = base85_value(c4)) < 0 || (c5 = base85_value(c5)) < 0)
       return IOFERR;
     code = base85_code(c1, c2, c3, c4, c5);
     iof_set4(O, code>>24, (code>>16)&255, (code>>8)&255, code&255);
@@ -1116,7 +1111,7 @@ iof_status base85_decode_state (iof *I, iof *O, basexx_state *state)
       set_tail2(state, c1, c2);
       if (state->flush)
       {
-        if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1)
+        if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0)
           return IOFERR;
         code = base85_code(c1, c2, 84, 84, 84);
         iof_set(O, code>>24);
@@ -1131,7 +1126,7 @@ iof_status base85_decode_state (iof *I, iof *O, basexx_state *state)
       set_tail3(state, c1, c2, c3);
       if (state->flush)
       {
-        if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1 || (c3 = base85_lookup[c3]) == -1)
+        if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 || (c3 = base85_value(c3)) < 0)
           return IOFERR;
         code = base85_code(c1, c2, c3, 84, 84);
         iof_set2(O, code>>24, (code>>16)&255);
@@ -1146,8 +1141,8 @@ iof_status base85_decode_state (iof *I, iof *O, basexx_state *state)
       set_tail4(state, c1, c2, c3, c4);
       if (state->flush)
       {
-        if ((c1 = base85_lookup[c1]) == -1 || (c2 = base85_lookup[c2]) == -1 ||
-            (c3 = base85_lookup[c3]) == -1 || (c4 = base85_lookup[c4]) == -1)
+        if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 ||
+            (c3 = base85_value(c3)) < 0 || (c4 = base85_value(c4)) < 0)
           return IOFERR;
         code = base85_code(c1, c2, c3, c4, 84);
         iof_set3(O, code>>24, (code>>16)&255, (code>>8)&255);
@@ -1155,8 +1150,8 @@ iof_status base85_decode_state (iof *I, iof *O, basexx_state *state)
       }
       return IOFEMPTY;
     }
-    if ((d1 = base85_lookup[c1]) == -1 || (d2 = base85_lookup[c2]) == -1 || (d3 = base85_lookup[c3]) == -1 ||
-        (d4 = base85_lookup[c4]) == -1 || (d5 = base85_lookup[c5]) == -1)
+    if ((d1 = base85_value(c1)) < 0 || (d2 = base85_value(c2)) < 0 || (d3 = base85_value(c3)) < 0 ||
+        (d4 = base85_value(c4)) < 0 || (d5 = base85_value(c5)) < 0)
     {
       set_tail5(state, c1, c2, c3, c4, c5);
       return IOFERR;
@@ -1374,305 +1369,6 @@ iof_status runlength_decode_state (iof *I, iof *O, runlength_state *state)
       return IOFEOF;
   }
   // return IOFFULL;
-}
-
-/* eexec stream filter, type1 fonts spec page 63 */
-
-void eexec_state_init_ln (eexec_state *state, size_t line, size_t maxline, const char *initbytes)
-{
-  state->key = -1;
-  state->flush = 0;
-  state->binary = maxline > 0;
-  state->c1 = -1;
-  state->line = line;
-  state->maxline = maxline;
-  state->initbytes = initbytes;
-}
-
-#define eexec_getc(I, c1) if ((c1 = iof_get(I)) < 0) return c1
-#define eexec_key(key, c1) (key = ((((c1) + key)*52845 + 22719) & 65535))
-#define eexec_decipher(key, c1, c) (c = ((c1)^(key>>8)), eexec_key(key, c1))
-#define eexec_encipher(key, c1, c) (c = ((c1)^(key>>8)), eexec_key(key, c))
-
-#ifndef lps_ignored_char
-#  define lps_ignored_char(c) (c == 0x20 || c == 0x0A || c == 0x0C || c == 0x0D || c == 0x09 || c == 0x00)
-#endif
-
-#define eexec_getx_(I, c) \
-  do { c = iof_get(I); } while (lps_ignored_char(c)); \
-  if (c < 0) return IOFEOF; \
-  if ((c = base16_lookup[c]) < 0) return IOFERR
-
-#define eexec_getx(I, c1, c2) eexec_getx_(I, c1); \
-  do { c2 = iof_get(I); } while (lps_ignored_char(c2)); \
-  if (c2 < 0) c2 = 0; else \
-  if ((c2 = base16_lookup[c2]) < 0) return IOFERR
-
-static int eexec_decode_init (iof *I, int *key, int *binary)
-{
-  int c1, c2, c3, c4;
-  *key = 55665;
-  eexec_getc(I, c1);
-  eexec_getc(I, c2);
-  eexec_getc(I, c3);
-  eexec_getc(I, c4); /* four head bytes */
-
-  /* eexec data has no explicit data termination. The caller of eexec_decode() should ensure that either
-  the input iof allows to read no more then necessary, or the output has no more space then 512 bytes,
-  to land safely somewhere in 512 bytes that probably follows eexec */
-
-  *binary = (base16_lookup[c1] < 0 || base16_lookup[c2] < 0 ||
-             base16_lookup[c3] < 0 || base16_lookup[c4] < 0);
-  if (*binary)
-  { /* gobble 4 random bytes keeping decipher key up-to-date */
-    eexec_key(*key, c1); eexec_key(*key, c2);
-    eexec_key(*key, c3); eexec_key(*key, c4);
-  }
-  else /* pfa/postscript only, pdf requires binary eexec form */
-  { /* gobble 4 random bytes (8 hex digits) keeping decipher key up-to-date */
-    c1 = base16_lookup[c1], c2 = base16_lookup[c2], c3 = base16_lookup[c3], c4 = base16_lookup[c4];
-    eexec_key(*key, (c1<<4)|c2); eexec_key(*key, (c3<<4)|c4); /* dummy bytes 1, 2 */
-    eexec_getx(I, c1, c2); eexec_getx(I, c3, c4);
-    eexec_key(*key, (c1<<4)|c2); eexec_key(*key, (c3<<4)|c4); /* dummy bytes 3, 4 */
-  }
-  return 0;
-}
-
-iof_status eexec_decode (iof *I, iof *O)
-{
-  int c, c1, c2, key, binary, status;
-  if ((status = eexec_decode_init(I, &key, &binary)) < 0)
-    return status;
-  if (binary)
-  {
-    while (iof_ensure(O, 1))
-    {
-      eexec_getc(I, c1);
-      eexec_decipher(key, c1, c);
-      iof_set(O, c);
-    }
-  }
-  else
-  {
-    while (iof_ensure(O, 1))
-    {
-      eexec_getx(I, c1, c2);
-      eexec_decipher(key, (c1<<4)|c2, c);
-      iof_set(O, c);
-    }
-  }
-  return IOFFULL;
-}
-
-iof_status eexec_decode_state (iof *I, iof *O, eexec_state *state)
-{
-  register int c, c1, c2, status;
-  if (state->key == -1) /* initial state */
-    if ((status = eexec_decode_init(I, &state->key, &state->binary)) < 0)
-      return status;
-  if (state->binary)
-  {
-    while (iof_ensure(O, 1))
-    {
-      if ((c1 = iof_get(I)) < 0)
-        return (state->flush ? IOFEOF : IOFEMPTY);
-      else if (c1 < 0)
-        return c1;
-      eexec_decipher(state->key, c1, c);
-      iof_set(O, c);
-    }
-  }
-  else
-  {
-    if (state->c1 > -1)
-    {
-      c1 = state->c1;
-      state->c1 = -1;
-      goto byte2;
-    }
-    while (iof_ensure(O, 1))
-    {
-      eexec_getx_(I, c1);
-      byte2:
-      do { c2 = iof_get(I); } while (lps_ignored_char(c2));
-      if (c2 < 0) // odd number of hex bytes? hmm... assume c2 is zero
-      {
-        if (state->flush)
-        {
-          eexec_decipher(state->key, (c1<<4), c);
-          iof_set(O, c);
-          return IOFEOF;
-        }
-        state->c1 = c1;
-        return IOFEMPTY;
-      }
-      else if (c2 < 0)
-        return c2;
-      if ((c2 = base16_lookup[c2]) < 0)
-        return IOFERR;
-      eexec_decipher(state->key, (c1<<4)|c2, c);
-      iof_set(O, c);
-    }
-  }
-  return IOFFULL;
-}
-
-#define EEXEC_INIT_BYTES ""
-
-iof_status eexec_encode (iof *I, iof *O, size_t line, size_t maxline)
-{
-  int c1, c, key;
-  const char *p;
-
-  key = 55665;
-  p = EEXEC_INIT_BYTES;
-  if (maxline == 0)
-  {
-    if (!iof_ensure(O, 4))
-      return IOFFULL;
-    eexec_encipher(key, p[0], c); iof_set(O, c);
-    eexec_encipher(key, p[1], c); iof_set(O, c);
-    eexec_encipher(key, p[2], c); iof_set(O, c);
-    eexec_encipher(key, p[3], c); iof_set(O, c);
-    while (iof_ensure(O, 1))
-    {
-      eexec_getc(I, c1);
-      eexec_encipher(key, c1, c);
-      iof_set(O, c);
-    }
-  }
-  else
-  {
-    if (!iof_ensure(O, 8 + 1))
-      return IOFFULL;
-    eexec_encipher(key, p[0], c); put_nl(O, line, maxline, 2); iof_set_uc_hex(O, c);
-    eexec_encipher(key, p[1], c); put_nl(O, line, maxline, 2); iof_set_uc_hex(O, c);
-    eexec_encipher(key, p[2], c); put_nl(O, line, maxline, 2); iof_set_uc_hex(O, c);
-    eexec_encipher(key, p[3], c); put_nl(O, line, maxline, 2); iof_set_uc_hex(O, c);
-    while (iof_ensure(O, 2 + 1))
-    {
-      eexec_getc(I, c1);
-      eexec_encipher(key, c1, c);
-      put_nl(O, line, maxline, 2);
-      iof_set_uc_hex(O, c);
-    }
-  }
-  return IOFFULL;
-}
-
-iof_status eexec_encode_state (iof *I, iof *O, eexec_state *state)
-{
-  int c, c1;
-  const char *p;
-
-  if (state->key == -1)
-  {
-    p = state->initbytes != NULL ? state->initbytes : EEXEC_INIT_BYTES;
-    if (state->binary)
-    {
-      if (!iof_ensure(O, 4))
-        return IOFFULL;
-      state->key = 55665;
-      eexec_encipher(state->key, p[0], c); iof_set(O, c);
-      eexec_encipher(state->key, p[1], c); iof_set(O, c);
-      eexec_encipher(state->key, p[2], c); iof_set(O, c);
-      eexec_encipher(state->key, p[3], c); iof_set(O, c);
-    }
-    else
-    {
-      if (!iof_ensure(O, 8 + 1))
-        return IOFFULL;
-      state->key = 55665;
-      eexec_encipher(state->key, p[0], c); put_nl(O, state->line, state->maxline, 2); iof_set_uc_hex(O, c);
-      eexec_encipher(state->key, p[1], c); put_nl(O, state->line, state->maxline, 2); iof_set_uc_hex(O, c);
-      eexec_encipher(state->key, p[2], c); put_nl(O, state->line, state->maxline, 2); iof_set_uc_hex(O, c);
-      eexec_encipher(state->key, p[3], c); put_nl(O, state->line, state->maxline, 2); iof_set_uc_hex(O, c);
-    }
-  }
-  if (state->binary)
-  {
-    while (iof_ensure(O, 1))
-    {
-      if ((c1 = iof_get(I)) < 0)
-        return c1 < 0 ? (state->flush ? IOFEOF : IOFEMPTY) : c1;
-      eexec_encipher(state->key, c1, c);
-      iof_set(O, c);
-    }
-  }
-  else
-  {
-    while (iof_ensure(O, 2 + 1))
-    {
-      if ((c1 = iof_get(I)) < 0)
-        return c1 < 0 ? (state->flush ? IOFEOF : IOFEMPTY) : c1;
-      eexec_encipher(state->key, c1, c);
-      put_nl(O, state->line, state->maxline, 2);
-      iof_set_uc_hex(O, c);
-    }
-  }
-  return IOFFULL;
-}
-
-/*
-Type1 charstrings are encoded/decoded in the same way, except that:
-- initial key is 4330
-- initbytes might be other then 4; /lenIV key in Private dict
-Type1 spec page 63. In practise we don't need iof interface here,
-we always apply the codec in place.
-*/
-
-#define type1chstr_key(key, c1) (key = ((((c1) + key)*52845 + 22719) & 65535))
-#define type1chstr_decipher(key, c1, c) (c = ((c1)^(key>>8)), type1chstr_key(key, c1))
-#define type1chstr_encipher(key, c1, c) (c = ((c1)^(key>>8)), type1chstr_key(key, c))
-
-int type1_charstring_decode (void *data, size_t size, void *outdata, uint8_t leniv)
-{ /* data and outdata may be the same, output size is always size - leniv */
-  uint8_t *input = (uint8_t *)data, *output = (uint8_t *)outdata;
-  size_t i;
-  int c, c1, key;
-
-  if (size < 4)
-    return 0;
-  key = 4330;
-  for (i = 0; i < leniv; ++i)
-  {
-    c1 = input[i];
-    type1chstr_key(key, c1);
-  }
-  for ( ; i < size; ++i)
-  {
-    c1 = input[i];
-    type1chstr_decipher(key, c1, c);
-    output[i - leniv] = c;
-  }
-  return 1;
-}
-
-#define TYPE1_CHSTR_INIT_BYTES EEXEC_INIT_BYTES
-
-int type1_charstring_encode (void *data, size_t size, void *outdata, uint8_t leniv)
-{ /* outdata may be data - leniv, output size is always size + leniv */
-  uint8_t *input = (uint8_t *)data, *output = (uint8_t *)outdata;
-  size_t i, j;
-  int c, c1, key;
-
-  key = 4330;
-  for (i = 0, j = 0; i < leniv; ++i)
-  {
-    c1 = TYPE1_CHSTR_INIT_BYTES[j];
-    //type1chstr_key(key, c1);
-    type1chstr_encipher(key, c1, c);
-    if (++j == 4)
-      j = 0;
-    output[i] = c;
-  }
-  for (i = 0; i < size; ++i)
-  {
-    c1 = input[i];
-    type1chstr_encipher(key, c1, c);
-    output[i + leniv] = c;
-  }
-  return 1;
 }
 
 /* filters */
@@ -1917,66 +1613,6 @@ static size_t runlength_encoder (iof *F, iof_mode mode)
   return 0;
 }
 
-// eexec decoder function
-
-static size_t eexec_decoder (iof *F, iof_mode mode)
-{
-  eexec_state *state;
-  iof_status status;
-  size_t tail;
-
-  switch(mode)
-  {
-    case IOFLOAD:
-    case IOFREAD:
-      if (F->flags & IOF_STOPPED)
-        return 0;
-      tail = iof_tail(F);
-      F->pos = F->buf + tail;
-      F->end = F->buf + F->space;
-      state = iof_filter_state(eexec_state *, F);
-      do {
-        status = eexec_decode_state(F->next, F, state);
-      } while (mode == IOFLOAD && status == IOFFULL && iof_resize_buffer(F));
-      return iof_decoder_retval(F, "eexec", status);
-    case IOFCLOSE:
-      iof_free(F);
-      return 0;
-    default:
-      break;
-  }
-  return 0;
-}
-
-// eexec encoder function
-
-static size_t eexec_encoder (iof *F, iof_mode mode)
-{
-  eexec_state *state;
-  iof_status status;
-
-  state = iof_filter_state(eexec_state *, F);
-  switch (mode)
-  {
-    case IOFFLUSH:
-      state->flush = 1;
-      // fall through
-    case IOFWRITE:
-      F->end = F->pos;
-      F->pos = F->buf;
-      status = eexec_encode_state(F, F->next, state);
-      return iof_encoder_retval(F, "eexec", status);
-    case IOFCLOSE:
-      if (!state->flush)
-        eexec_encoder(F, IOFFLUSH);
-      iof_free(F);
-      return 0;
-    default:
-      break;
-  }
-  return 0;
-}
-
 //
 
 int iof_filter_basexx_encoder_ln (iof *F, size_t line, size_t maxline)
@@ -2081,28 +1717,5 @@ iof * iof_filter_runlength_encoder (iof *N)
   O = iof_filter_writer(runlength_encoder, sizeof(runlength_state), &state);
   iof_setup_next(O, N);
   runlength_state_init(state);
-  return O;
-}
-
-/* eexec stream filter, type1 fonts spec p. 63 */
-
-iof * iof_filter_eexec_decoder (iof *N)
-{
-  iof *I;
-  eexec_state *state;
-  I = iof_filter_reader(eexec_decoder, sizeof(eexec_state), &state);
-  iof_setup_next(I, N);
-  eexec_state_init(state);
-  state->flush = 1;
-  return I;
-}
-
-iof * iof_filter_eexec_encoder (iof *N)
-{
-  iof *O;
-  eexec_state *state;
-  O = iof_filter_writer(eexec_encoder, sizeof(eexec_state), &state);
-  iof_setup_next(O, N);
-  eexec_state_init(state);
   return O;
 }
