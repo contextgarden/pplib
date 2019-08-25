@@ -31,13 +31,15 @@ CFLAGS=$(W) -O3
 
 OBJEXT=$(BUILDSUFFIX).o
 
-PPUTILS=utilmem utillog utilnumber utiliof utilmd5 utilsha utilcrypt
+PPALLOC=utilmem utilmemheap utilmemheapiof utilmemstock utilmemstockiof utilmempool utilmeminfo
+PPUTILS=utillog utilnumber utiliof utilmd5 utilsha utilcrypt
 PPFILTERS=utilbasexx utilflate utillzw utilfpred
 PPMODULES=ppheap pparray ppdict ppstream ppcrypt ppxref ppload
 
 OUTDIR=build
 UTILSDIR=util
 
+PPSTATICALLOCOBJ=$(patsubst %, $(OUTDIR)/%$(OBJEXT), $(PPALLOC))
 PPSTATICUTILSOBJ=$(patsubst %, $(OUTDIR)/%$(OBJEXT), $(PPUTILS))
 PPSTATICFILTERSOBJ=$(patsubst %, $(OUTDIR)/%$(OBJEXT), $(PPFILTERS))
 PPSTATICOBJ=$(patsubst %, $(OUTDIR)/%$(OBJEXT), $(PPMODULES))
@@ -65,13 +67,16 @@ md:
 $(PPSTATICOBJ): $(OUTDIR)/%$(OBJEXT): %.c %.h
 	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) -o $@ -c $<
 
+$(PPSTATICALLOCOBJ): $(OUTDIR)/%$(OBJEXT): $(UTILSDIR)/%.c $(UTILSDIR)/%.h
+	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) -o $@ -c $<
+
 $(PPSTATICUTILSOBJ): $(OUTDIR)/%$(OBJEXT): $(UTILSDIR)/%.c $(UTILSDIR)/%.h
 	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) -o $@ -c $<
 
 $(PPSTATICFILTERSOBJ): $(OUTDIR)/%$(OBJEXT): $(UTILSDIR)/%.c $(UTILSDIR)/%.h
 	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) $(AUX) -o $@ -c $<
 
-$(PPSTATICLIB): $(PPSTATICOBJ) $(PPSTATICUTILSOBJ) $(PPSTATICFILTERSOBJ)
+$(PPSTATICLIB): $(PPSTATICOBJ) $(PPSTATICALLOCOBJ) $(PPSTATICUTILSOBJ) $(PPSTATICFILTERSOBJ)
 	ar rcs $@ $^
 
 $(PPTEST1): $(PPSTATICLIB) pptest1.c
