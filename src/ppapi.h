@@ -30,6 +30,20 @@ typedef struct {
   int flags;
 } _ppstring;
 
+// tmp prefix for new types qq
+
+typedef struct {
+  uint8_t *data;
+  size_t size;
+  int flags;
+} qqstring;
+
+typedef struct {
+  uint8_t *data;
+  size_t size;
+  int flags;
+} qqname;
+
 typedef struct ppobj ppobj;
 typedef struct ppref ppref;
 
@@ -117,8 +131,8 @@ typedef enum {
   PPBOOL,
   PPINT,
   PPNUM,
-  PPNAME,
-  PPSTRING,
+  PPNAME, QQNAME,
+  PPSTRING, QQSTRING,
   PPARRAY,
   PPDICT,
   PPSTREAM,
@@ -132,8 +146,8 @@ struct ppobj {
   union {
     ppint integer;
     ppnum number;
-    ppname name;
-    ppstring string;
+    ppname name; qqname *qname;
+    ppstring string; qqstring *qstring;
     pparray *array;
     ppdict *dict;
     ppstream *stream;

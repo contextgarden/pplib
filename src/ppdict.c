@@ -1,14 +1,14 @@
 
 #include "pplib.h"
 
-ppdict * ppdict_create (const ppobj *stackpos, size_t size, ppheap **pheap)
+ppdict * ppdict_create (const ppobj *stackpos, size_t size, qqheap *qheap)
 {
   ppdict *dict;
   ppobj *data;
   ppname *pkey;
   size_t i;
   size >>= 1;
-  dict = (ppdict *)ppheap_take(pheap, sizeof(ppdict) + size * sizeof(ppobj) + (size + 1) * sizeof(ppname *)); // ? + size * sizeof(ppdict_map_node)
+  dict = (ppdict *)qqstruct_take(qheap, sizeof(ppdict) + size * sizeof(ppobj) + (size + 1) * sizeof(ppname *)); // ? + size * sizeof(ppdict_map_node)
   dict->size = 0;
   dict->data = data = (ppobj *)(dict + 1);
   dict->keys = pkey = (ppname *)(dict->data + size);

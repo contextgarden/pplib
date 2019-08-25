@@ -9,8 +9,8 @@ ppxref * ppxref_create (ppdoc *pdf, size_t initsize, size_t xrefoffset)
 
   if (initsize == 0) // unknown
     initsize = PPXREF_MAP_INIT;
-  xref = (ppxref *)ppheap_take(&pdf->heap, sizeof(ppxref) + initsize * sizeof(ppxsec));
-  xref->sects = (ppxsec *)(xref + 1);
+  xref = (ppxref *)qqstruct_take(&pdf->qheap, sizeof(ppxref));
+  xref->sects = (ppxsec *)qqstruct_take(&pdf->qheap, initsize * sizeof(ppxsec));
   xref->size = 0;
   xref->space = initsize;
   xref->count = 0;
@@ -19,21 +19,40 @@ ppxref * ppxref_create (ppdoc *pdf, size_t initsize, size_t xrefoffset)
   xref->prev = NULL;
   xref->pdf = pdf;
   xref->offset = xrefoffset;
-  //xref->crypt = NULL;
   return xref;
 }
 
-ppxsec * ppxref_push_section (ppxref *xref, ppheap **pheap)
+ppxsec * ppxref_push_section (ppxref *xref, qqheap *qheap)
 {
   ppxsec *sects;
   if (xref->size < xref->space)
     return &xref->sects[xref->size++];
   xref->space <<= 1;
   sects = xref->sects;
-  xref->sects = (ppxsec *)ppheap_take(pheap, xref->space * sizeof(ppxsec)); // waste but rare
+  xref->sects = (ppxsec *)qqstruct_take(qheap, xref->space * sizeof(ppxsec)); // waste but rare
   memcpy(xref->sects, sects, xref->size * sizeof(ppxsec));
   return &xref->sects[xref->size++];
 }
+
+/* When loading xref table, we don't know how many sections is there. We assume 16, which is
+    more than usual (waste). But if there is more, we double the size, wasting again. This
+    could be made better with a dedicated allocator for xref sections (heap or generic malloc).
+    Or an ephemeric malloced c-array stored in heap once ready (analogical to stack used for dicts/arrays).
+    For xref streams we have explicit num of sections. */
+
+/*
+void ppxref_done_sections (ppxref *xref, qqheap *qheap)
+{ // if xref->sects was initialized with mallocted array we could do
+  ppxsec *sects;
+  size_t size;
+  sects = xref->sects;
+  size = xref->size * sizeof(ppxsec);
+  xref->sects = (ppxsec *)qqstruct_take(qheap, size);
+  memcpy(xref->sects, sects, size);
+  pp_free(sects);
+  xref->space = xref->size;
+}
+*/
 
 static void ppxref_sort_sects (ppxsec *left, ppxsec *right)
 {

@@ -25,6 +25,7 @@ static size_t stock8_writer (iof *O, iof_mode mode)
       O->end = O->buf + space;
       return written; // eq (space - written)
     case IOFCLOSE:
+    default:
       break;
   }
   return 0;
@@ -52,6 +53,7 @@ static size_t stock16_writer (iof *O, iof_mode mode)
       O->end = O->buf + space;
       return written;
     case IOFCLOSE:
+    default:
       break;
   }
   return 0;
@@ -79,6 +81,7 @@ static size_t stock32_writer (iof *O, iof_mode mode)
       O->end = O->buf + space;
       return written;
     case IOFCLOSE:
+    default:
       break;
   }
   return 0;
@@ -106,6 +109,7 @@ static size_t stock64_writer (iof *O, iof_mode mode)
       O->end = O->buf + space;
       return written;
     case IOFCLOSE:
+    default:
       break;
   }
   return 0;

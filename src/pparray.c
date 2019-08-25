@@ -1,11 +1,11 @@
 
 #include "pplib.h"
 
-pparray * pparray_create (const ppobj *stackpos, size_t size, ppheap **pheap)
+pparray * pparray_create (const ppobj *stackpos, size_t size, qqheap *qheap)
 {
   pparray *array;
   ppobj *data;
-  array = (pparray *)ppheap_take(pheap, sizeof(pparray) + size * sizeof(ppobj));
+  array = (pparray *)qqstruct_take(qheap, sizeof(pparray) + size * sizeof(ppobj));
   array->size = size;
   array->data = data = (ppobj *)(array + 1);
   memcpy(data, stackpos, size * sizeof(ppobj));

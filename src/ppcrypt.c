@@ -6,10 +6,10 @@
 
 /* crypt struct */
 
-static ppcrypt * ppcrypt_create (ppheap **pheap)
+static ppcrypt * ppcrypt_create (qqheap *qheap)
 {
   ppcrypt *crypt;
-  crypt = (ppcrypt *)ppheap_take(pheap, sizeof(ppcrypt));
+  crypt = (ppcrypt *)qqstruct_take(qheap, sizeof(ppcrypt));
   memset(crypt, 0, sizeof(ppcrypt));
   return crypt;
 }
@@ -226,7 +226,7 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
     return PPCRYPT_FAIL;
 
   if ((crypt = pdf->crypt) == NULL)
-    crypt = pdf->crypt = ppcrypt_create(&pdf->heap);
+    crypt = pdf->crypt = ppcrypt_create(&pdf->qheap);
   if (!ppdict_get_uint(encrypt, "V", &crypt->algorithm_variant))
     crypt->algorithm_variant = 0;
   if (crypt->algorithm_variant < 1 || crypt->algorithm_variant > 5)
@@ -490,7 +490,7 @@ Since streams and strings might theoretically be encrypted with different filter
 decryption state here.
 */
 
-ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, ppheap **pheap)
+ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, qqheap *qheap)
 {
   ppstring cryptkeystring;
   //if (crypt->cryptkeylength > 0)
@@ -520,6 +520,6 @@ ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, ppheap **pheap)
     memcpy(crypt->cryptkey, crypt->filekey, 32); // just for the record
     crypt->cryptkeylength = 32;
   }
-  cryptkeystring = ppstring_internal(crypt->cryptkey, crypt->cryptkeylength, pheap);
+  cryptkeystring = ppstring_internal(crypt->cryptkey, crypt->cryptkeylength, qheap);
   return ppstring_decoded(cryptkeystring);
 }

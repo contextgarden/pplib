@@ -5,7 +5,7 @@
 ppstream * ppstream_create (ppdoc *pdf, ppdict *dict, size_t offset)
 {
   ppstream *stream;
-  stream = (ppstream *)ppheap_take(&pdf->heap, sizeof(ppstream));
+  stream = (ppstream *)qqstruct_take(&pdf->qheap, sizeof(ppstream));
   stream->dict = dict;
   stream->offset = offset;
   //if (!ppdict_rget_uint(dict, "Length", &stream->length)) // may be indirect pointing PPNONE at this moment
@@ -249,7 +249,7 @@ void ppstream_done (ppstream *stream)
 }
 
 /* fetching stream info
-PJ20190916: revealed it makes sense to do a lilbit more just after parsing stream entry to simplify stream operations
+PJ20180916: revealed it makes sense to do a lilbit more just after parsing stream entry to simplify stream operations
 and extend ppstream api
 */
 
@@ -342,9 +342,11 @@ void ppstream_info (ppstream *stream, ppdoc *pdf)
     }
     if (farraysize > 0)
     {
-      filtertypes = ppheap_take(&pdf->heap, farraysize * sizeof(ppstreamtp));
+      filtertypes = (ppstreamtp *)qqstruct_take(&pdf->qheap, farraysize * sizeof(ppstreamtp));
       if ((pobj = ppdict_rget_obj(dict, paramskey)) != NULL)
-        filterparams = ppheap_take(&pdf->heap, farraysize * sizeof(ppdict *));
+      { 
+        filterparams = (ppdict **)qqstruct_take(&pdf->qheap, farraysize * sizeof(ppdict *));
+      }
       for (i = 0; i < farraysize; ++i)
       {
         if ((fname = ppstream_get_filter_name(fobj, i)) != NULL && ppstream_filter_type(fname, &filtertype))
@@ -424,7 +426,7 @@ void ppstream_info (ppstream *stream, ppdoc *pdf)
 
   /* finally, if the stream is encrypted with non-identity crypt (implicit or explicit), make and save the crypt key */
   if (stream->flags & PPSTREAM_ENCRYPTED)
-    stream->cryptkey = ppcrypt_stmkey(crypt, ref, ((stream->flags & PPSTREAM_ENCRYPTED_AES) != 0), &pdf->heap);
+    stream->cryptkey = ppcrypt_stmkey(crypt, ref, ((stream->flags & PPSTREAM_ENCRYPTED_AES) != 0), &pdf->qheap);
 }
 
 void ppstream_filter_info (ppstream *stream, ppstream_filter *info, int decode)
