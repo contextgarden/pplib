@@ -48,35 +48,16 @@ typedef struct ppobj ppobj;
 typedef struct ppref ppref;
 
 
-#if ARM_COMPLIANT
-typedef struct {
-  ppobj *data;
-  size_t size;
-  ppnum PPARRAY_ALIGNMENT;
-} pparray;
-#else
 typedef struct {
   ppobj *data;
   size_t size;
 } pparray;
-#endif
 
-
-#if ARM_COMPLIANT
-typedef struct {
-  ppobj *data;
-  ppname *keys;
-  size_t size;
-  ppnum PPDICT_ALIGNMENT;
-} ppdict;
-
-#else
 typedef struct {
   ppobj *data;
   ppname *keys;
   size_t size;
 } ppdict;
-#endif
 
 typedef enum {
   PPSTREAM_BASE16 = 0,
@@ -204,11 +185,7 @@ typedef struct ppdoc ppdoc;
 #define ppname_is(name, s) (memcmp(name, s, sizeof("" s) - 1) == 0)
 #define ppname_eq(name, n) (memcmp(name, s, ppname_size(name)) == 0)
 
-#if ARM_COMPLIANT
-#define _ppname_ghost(name) (((const _ppname *)((void *)name)) - 1)
-#else
 #define _ppname_ghost(name) (((const _ppname *)(name)) - 1)
-#endif
 
 #define ppname_size(name) (_ppname_ghost(name)->size)
 #define ppname_exec(name) (_ppname_ghost(name)->flags & PPNAME_EXEC)
@@ -222,11 +199,7 @@ PPAPI ppname ppname_encoded (ppname name);
 
 /* string */
 
-#if ARM_COMPLIANT
-#define _ppstring_ghost(string) (((const _ppstring *)((void *)string)) - 1)
-#else
 #define _ppstring_ghost(string) (((const _ppstring *)(string)) - 1)
-#endif
 
 #define ppstring_size(string) (_ppstring_ghost(string)->size)
 
