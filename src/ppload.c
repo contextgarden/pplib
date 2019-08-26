@@ -69,9 +69,9 @@ const char ppname_byte_lookup[] = {
    ghost->size = siz - sizeof(_ppname) - 1 - sizeof(ppname *), \
   (ppname)(ghost + 1))
 
-#define ppname_set_alter_ego(name, ghost, ego) (*((ppname *)(name + (ghost)->size + 1)) = ego)
+#define ppname_set_alter_ego(name, ghost, ego) (*((ppname *)((void *)(name + (ghost)->size + 1))) = ego)
 
-#define ppname_get_alter_ego(name) (*((ppname *)(name + ppname_size(name) + 1)))
+#define ppname_get_alter_ego(name) (*((ppname *)((void *)(name + ppname_size(name) + 1))))
 
 static ppname ppscan_name (iof *I, qqheap *qheap)
 {
@@ -647,8 +647,8 @@ static void ppstack_resize (ppstack *stack)
 
 /* scanner commons */
 
-#define ppscan_uint(I, u) iof_get_uintlw(I, u)
-#define ppread_uint(s, u) string_to_uintlw((const char *)(s), u)
+#define ppscan_uint(I, u) iof_get_usize(I, u)
+#define ppread_uint(s, u) string_to_usize((const char *)(s), u)
 
 static ppobj * ppscan_numobj (iof *I, ppobj *obj, int negative)
 {
@@ -1352,7 +1352,7 @@ static int ppscan_start_entry (iof *I, ppref *ref)
 
 static int ppscan_skip_entry (iof *I)
 {
-  size_t u;
+  ppuint u;
   ppscan_find(I); if (!ppscan_uint(I, &u)) return 0;
   ppscan_find(I); if (!ppscan_uint(I, &u)) return 0;
   ppscan_find(I); if (!ppscan_key(I, "obj")) return 0;
