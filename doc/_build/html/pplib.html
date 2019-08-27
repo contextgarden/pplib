@@ -18,7 +18,7 @@
     <script type="text/javascript" src="_static/bizstyle.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pplib" href="ppapi.html" />
+    <link rel="next" title="1.x vs 2.x" href="ppnew.html" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <!--[if lt IE 9]>
     <script type="text/javascript" src="_static/css3-mediaqueries.js"></script>
@@ -31,7 +31,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="ppapi.html" title="pplib"
+          <a href="ppnew.html" title="1.x vs 2.x"
              accesskey="N">next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">pplib 0.1 documentation</a> &#187;</li> 
       </ul>
@@ -39,8 +39,8 @@
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Next topic</h4>
-  <p class="topless"><a href="ppapi.html"
-                        title="next chapter"><code class="docutils literal notranslate"><span class="pre">pplib</span></code></a></p>
+  <p class="topless"><a href="ppnew.html"
+                        title="next chapter">1.x vs 2.x</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -72,25 +72,52 @@
 <h1>pplib<a class="headerlink" href="#pplib" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="ppapi.html"><code class="docutils literal notranslate"><span class="pre">pplib</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="ppapi.html#c-api">C-API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#types">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#object">Object</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#names">Names</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#string">String</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#array">Array</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#dict">Dict</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#stream">Stream</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#filters">Filters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#ref">Ref</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#xref">XRef</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#pdf">PDF</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#encryption">Encryption</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#pages">Pages</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#contents">Contents</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#boxes">Boxes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#transforms">Transforms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ppapi.html#errors-handling">Errors handling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ppnew.html">1.x vs 2.x</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ppnew.html#allocation">Allocation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppnew.html#strings-and-names">Strings And Names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppnew.html#cleanups">Cleanups</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ppapi-2.x.html"><code class="docutils literal notranslate"><span class="pre">pplib</span></code> 2.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ppapi-2.x.html#c-api">C-API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#types">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#object">Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#names">Names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#string">String</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#array">Array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#dict">Dict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#stream">Stream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#filters">Filters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#ref">Ref</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#xref">XRef</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#pdf">PDF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#encryption">Encryption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#pages">Pages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#contents">Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#boxes">Boxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#transforms">Transforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-2.x.html#errors-handling">Errors handling</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ppapi-1.x.html"><code class="docutils literal notranslate"><span class="pre">pplib</span></code> 1.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ppapi-1.x.html#c-api">C-API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#types">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#object">Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#names">Names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#string">String</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#array">Array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#dict">Dict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#stream">Stream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#filters">Filters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#ref">Ref</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#xref">XRef</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#pdf">PDF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#encryption">Encryption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#pages">Pages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#contents">Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#boxes">Boxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#transforms">Transforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppapi-1.x.html#errors-handling">Errors handling</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="ppcode.html">Examples</a><ul>
@@ -110,6 +137,7 @@
 <li class="toctree-l2"><a class="reference internal" href="ppcode.html#v1-03">v1.03</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ppcode.html#v1-04">v1.04</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ppcode.html#v1-05">v1.05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ppcode.html#v1-97">v1.97</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="ppcode.html#todo">TODO</a></li>
@@ -130,13 +158,13 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="ppapi.html" title="pplib"
+          <a href="ppnew.html" title="1.x vs 2.x"
              >next</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">pplib 0.1 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2018, p.jackowski@gust.org.pl.
+        &#169; Copyright 2019, p.jackowski@gust.org.pl.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.1.
     </div>
   </body>

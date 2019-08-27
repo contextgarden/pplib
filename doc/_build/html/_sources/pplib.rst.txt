@@ -9,5 +9,7 @@ pplib
 .. toctree::
    :maxdepth: 2
 
-   ppapi
+   ppnew
+   ppapi-2.x
+   ppapi-1.x
    ppcode

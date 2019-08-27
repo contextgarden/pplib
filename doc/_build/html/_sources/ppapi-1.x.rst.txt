@@ -1,6 +1,6 @@
 
-``pplib``
-=========
+``pplib`` 1.x
+=============
 
 ``pplib`` is a library for raw PDF access. It parses PDF documents and provides an interface to access document structures in C.
 

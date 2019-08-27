@@ -18,7 +18,7 @@
     <script type="text/javascript" src="_static/bizstyle.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="pplib" href="ppapi.html" />
+    <link rel="prev" title="pplib 1.x" href="ppapi-1.x.html" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <!--[if lt IE 9]>
     <script type="text/javascript" src="_static/css3-mediaqueries.js"></script>
@@ -31,7 +31,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="ppapi.html" title="pplib"
+          <a href="ppapi-1.x.html" title="pplib 1.x"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="pplib.html">pplib 0.1 documentation</a> &#187;</li> 
       </ul>
@@ -57,14 +57,15 @@
 <li><a class="reference internal" href="#v1-03">v1.03</a></li>
 <li><a class="reference internal" href="#v1-04">v1.04</a></li>
 <li><a class="reference internal" href="#v1-05">v1.05</a></li>
+<li><a class="reference internal" href="#v1-97">v1.97</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#todo">TODO</a></li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="ppapi.html"
-                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">pplib</span></code></a></p>
+  <p class="topless"><a href="ppapi-1.x.html"
+                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">pplib</span></code> 1.x</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -114,32 +115,32 @@
 
 <span class="n">static</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span> <span class="n">crypt_info</span> <span class="p">(</span><span class="n">ppdoc</span> <span class="o">*</span><span class="n">pdf</span><span class="p">)</span>
 <span class="p">{</span>
-	<span class="n">switch</span> <span class="p">(</span><span class="n">ppdoc_crypt_status</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span>
-	<span class="p">{</span>
-		<span class="n">case</span> <span class="n">PPCRYPT_NONE</span><span class="p">:</span>
-			<span class="k">return</span> <span class="s2">&quot;none&quot;</span><span class="p">;</span>
-		<span class="n">case</span> <span class="n">PPCRYPT_DONE</span><span class="p">:</span>
-			<span class="k">return</span> <span class="s2">&quot;empty password&quot;</span><span class="p">;</span>
-		<span class="n">case</span> <span class="n">PPCRYPT_PASS</span><span class="p">:</span>
-			<span class="k">return</span> <span class="s2">&quot;nonempty password&quot;</span><span class="p">;</span>
-		<span class="n">default</span><span class="p">:</span>
-			<span class="k">break</span><span class="p">;</span>
-	<span class="p">}</span>
-	<span class="k">return</span> <span class="s2">&quot;this shouldn&#39;t happen&quot;</span><span class="p">;</span>
+  <span class="n">switch</span> <span class="p">(</span><span class="n">ppdoc_crypt_status</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">case</span> <span class="n">PPCRYPT_NONE</span><span class="p">:</span>
+      <span class="k">return</span> <span class="s2">&quot;none&quot;</span><span class="p">;</span>
+    <span class="n">case</span> <span class="n">PPCRYPT_DONE</span><span class="p">:</span>
+      <span class="k">return</span> <span class="s2">&quot;empty password&quot;</span><span class="p">;</span>
+    <span class="n">case</span> <span class="n">PPCRYPT_PASS</span><span class="p">:</span>
+      <span class="k">return</span> <span class="s2">&quot;nonempty password&quot;</span><span class="p">;</span>
+    <span class="n">default</span><span class="p">:</span>
+      <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="s2">&quot;this shouldn&#39;t happen&quot;</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="n">static</span> <span class="n">void</span> <span class="n">print_info</span> <span class="p">(</span><span class="n">ppdoc</span> <span class="o">*</span><span class="n">pdf</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">ppdict</span> <span class="o">*</span><span class="n">info</span><span class="p">;</span>
-  <span class="n">ppstring</span> <span class="n">creator</span><span class="p">,</span> <span class="n">producer</span><span class="p">;</span>
+  <span class="n">ppstring</span> <span class="o">*</span><span class="n">creator</span><span class="p">,</span> <span class="o">*</span><span class="n">producer</span><span class="p">;</span>
   <span class="n">size_t</span> <span class="n">memused</span><span class="p">,</span> <span class="n">memwaste</span><span class="p">;</span>
 
   <span class="k">if</span> <span class="p">((</span><span class="n">info</span> <span class="o">=</span> <span class="n">ppdoc_info</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="o">!=</span> <span class="n">NULL</span><span class="p">)</span>
   <span class="p">{</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">creator</span> <span class="o">=</span> <span class="n">ppdict_rget_string</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s2">&quot;Creator&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="n">NULL</span><span class="p">)</span>
-      <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;  creator: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ppstring_decoded</span><span class="p">(</span><span class="n">creator</span><span class="p">));</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;  creator: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ppstring_decoded_data</span><span class="p">(</span><span class="n">creator</span><span class="p">));</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">producer</span> <span class="o">=</span> <span class="n">ppdict_rget_string</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s2">&quot;Producer&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="n">NULL</span><span class="p">)</span>
-      <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;  producer: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ppstring_decoded</span><span class="p">(</span><span class="n">producer</span><span class="p">));</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;  producer: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ppstring_decoded_data</span><span class="p">(</span><span class="n">producer</span><span class="p">));</span>
   <span class="p">}</span>
   <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;  version: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ppdoc_version_string</span><span class="p">(</span><span class="n">pdf</span><span class="p">));</span>
   <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;  protection: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">crypt_info</span><span class="p">(</span><span class="n">pdf</span><span class="p">));</span>
@@ -153,9 +154,9 @@
 
 <span class="n">static</span> <span class="nb">int</span> <span class="n">usage</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">argv0</span><span class="p">)</span>
 <span class="p">{</span>
-	<span class="n">printf</span><span class="p">(</span><span class="s2">&quot;pplib &quot;</span> <span class="n">pplib_version</span> <span class="s2">&quot;, &quot;</span> <span class="n">pplib_author</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
-	<span class="n">printf</span><span class="p">(</span><span class="s2">&quot;usage: </span><span class="si">%s</span><span class="s2"> file1.pdf file2.pdf ...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">argv0</span><span class="p">);</span>
-	<span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;pplib &quot;</span> <span class="n">pplib_version</span> <span class="s2">&quot;, &quot;</span> <span class="n">pplib_author</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;usage: </span><span class="si">%s</span><span class="s2"> file1.pdf file2.pdf ...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">argv0</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="nb">int</span> <span class="n">main</span> <span class="p">(</span><span class="nb">int</span> <span class="n">argc</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
@@ -213,16 +214,16 @@
 
 <span class="n">static</span> <span class="nb">int</span> <span class="n">usage</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">argv0</span><span class="p">)</span>
 <span class="p">{</span>
-	<span class="n">printf</span><span class="p">(</span><span class="s2">&quot;pplib &quot;</span> <span class="n">pplib_version</span> <span class="s2">&quot;, &quot;</span> <span class="n">pplib_author</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
-	<span class="n">printf</span><span class="p">(</span><span class="s2">&quot;usage: </span><span class="si">%s</span><span class="s2"> file1.pdf file2.pdf ...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">argv0</span><span class="p">);</span>
-	<span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;pplib &quot;</span> <span class="n">pplib_version</span> <span class="s2">&quot;, &quot;</span> <span class="n">pplib_author</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;usage: </span><span class="si">%s</span><span class="s2"> file1.pdf file2.pdf ...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">argv0</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="c1">#define OUTDIR &quot;.&quot;</span>
 
 <span class="n">static</span> <span class="n">void</span> <span class="n">log_callback</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">message</span><span class="p">,</span> <span class="n">void</span> <span class="o">*</span><span class="n">alien</span><span class="p">)</span>
 <span class="p">{</span>
-	<span class="n">fprintf</span><span class="p">((</span><span class="n">FILE</span> <span class="o">*</span><span class="p">)</span><span class="n">alien</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">ooops: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
+  <span class="n">fprintf</span><span class="p">((</span><span class="n">FILE</span> <span class="o">*</span><span class="p">)</span><span class="n">alien</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">ooops: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="nb">int</span> <span class="n">main</span> <span class="p">(</span><span class="nb">int</span> <span class="n">argc</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
@@ -240,7 +241,7 @@
   <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
   <span class="n">ppcontext</span> <span class="o">*</span><span class="n">context</span><span class="p">;</span>
   <span class="n">ppobj</span> <span class="o">*</span><span class="n">obj</span><span class="p">;</span>
-  <span class="n">ppname</span> <span class="n">op</span><span class="p">;</span>
+  <span class="n">ppname</span> <span class="o">*</span><span class="n">op</span><span class="p">;</span>
   <span class="n">size_t</span> <span class="n">operators</span><span class="p">;</span>
 
   <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>
@@ -261,19 +262,19 @@
     <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;done.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
     <span class="n">switch</span> <span class="p">(</span><span class="n">ppdoc_crypt_status</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span>
     <span class="p">{</span>
-    	<span class="n">case</span> <span class="n">PPCRYPT_NONE</span><span class="p">:</span>
-    	<span class="n">case</span> <span class="n">PPCRYPT_DONE</span><span class="p">:</span>
-    		<span class="k">break</span><span class="p">;</span>
-    	<span class="n">case</span> <span class="n">PPCRYPT_PASS</span><span class="p">:</span>
-    		<span class="k">if</span> <span class="p">(</span><span class="n">ppdoc_crypt_pass</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">PPCRYPT_DONE</span> <span class="o">||</span> <span class="n">ppdoc_crypt_pass</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="n">PPCRYPT_DONE</span><span class="p">)</span>
-    		  <span class="k">break</span><span class="p">;</span>
+      <span class="n">case</span> <span class="n">PPCRYPT_NONE</span><span class="p">:</span>
+      <span class="n">case</span> <span class="n">PPCRYPT_DONE</span><span class="p">:</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="n">case</span> <span class="n">PPCRYPT_PASS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ppdoc_crypt_pass</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">PPCRYPT_DONE</span> <span class="o">||</span> <span class="n">ppdoc_crypt_pass</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="n">PPCRYPT_DONE</span><span class="p">)</span>
+          <span class="k">break</span><span class="p">;</span>
         <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;sorry, password needed</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
         <span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
         <span class="k">continue</span><span class="p">;</span>
-    	<span class="n">case</span> <span class="n">PPCRYPT_FAIL</span><span class="p">:</span>
-    		<span class="n">printf</span><span class="p">(</span><span class="s2">&quot;sorry, encryption failed</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
-    		<span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
-    		<span class="k">continue</span><span class="p">;</span>
+      <span class="n">case</span> <span class="n">PPCRYPT_FAIL</span><span class="p">:</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;sorry, encryption failed</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+        <span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
+        <span class="k">continue</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="n">filename</span> <span class="o">=</span> <span class="n">get_file_name</span><span class="p">(</span><span class="n">filepath</span><span class="p">);</span>
     <span class="n">sprintf</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="n">OUTDIR</span> <span class="s2">&quot;/</span><span class="si">%s</span><span class="s2">.out&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">);</span>
@@ -323,7 +324,7 @@
     <span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
   <span class="p">}</span>
   <span class="n">ppcontext_free</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
-	<span class="n">ppstream_free_buffers</span><span class="p">();</span>
+  <span class="n">ppstream_free_buffers</span><span class="p">();</span>
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
@@ -339,9 +340,9 @@
 
 static int usage (const char *argv0)
 {
-	printf(&quot;pplib &quot; pplib_version &quot;, &quot; pplib_author &quot;\n&quot;);
-	printf(&quot;usage: %s file1.pdf file2.pdf ...\n&quot;, argv0);
-	return 0;
+  printf(&quot;pplib &quot; pplib_version &quot;, &quot; pplib_author &quot;\n&quot;);
+  printf(&quot;usage: %s file1.pdf file2.pdf ...\n&quot;, argv0);
+  return 0;
 }
 
 static void print_result_filter (ppstream *stream, int decode)
@@ -352,41 +353,41 @@ static void print_result_filter (ppstream *stream, int decode)
   ppstream_filter_info(stream, &amp;info, decode);
   printf(&quot;when %s: /Filter [&quot;, decode ? &quot;uncompressed&quot; : &quot;compressed&quot;);
   for (i = 0; i &lt; info.count; ++i)
-	  printf(&quot; /%s&quot;, ppstream_filter_name[info.filters[i]]);
-	printf(&quot; ]&quot;);
-	if (info.params != NULL)
-	{
-		printf(&quot; /DecodeParms [&quot;);
-		for (i = 0; i &lt; info.count; ++i)
-			printf(&quot; %s&quot;, info.params[i] != NULL ? &quot;&lt;&lt;...&gt;&gt;&quot; : &quot;null&quot;);
-		printf(&quot; ]&quot;);
-	}
+    printf(&quot; /%s&quot;, ppstream_filter_name[info.filters[i]]);
+  printf(&quot; ]&quot;);
+  if (info.params != NULL)
+  {
+    printf(&quot; /DecodeParms [&quot;);
+    for (i = 0; i &lt; info.count; ++i)
+      printf(&quot; %s&quot;, info.params[i] != NULL ? &quot;&lt;&lt;...&gt;&gt;&quot; : &quot;null&quot;);
+    printf(&quot; ]&quot;);
+  }
   printf(&quot;\n&quot;);
 }
 
 static void print_stream_info (ppref *ref, ppstream *stream)
-{	
-	size_t length;
-	printf(&quot;object %lu %lu R\n&quot;, (unsigned long)ref-&gt;number, (unsigned long)ref-&gt;version);
-	if (stream-&gt;flags &amp; PPSTREAM_FILTER)
-		printf(&quot;filtered &quot;);
-	else
-	  printf(&quot;plain &quot;);
-	if (stream-&gt;flags &amp; PPSTREAM_IMAGE)
-	  printf(&quot;image &quot;);
-	else
-	  printf(&quot;stream &quot;);
-	if (stream-&gt;flags &amp; PPSTREAM_ENCRYPTED)
-		printf(&quot;encrypted &quot;);
-	if (stream-&gt;flags &amp; PPSTREAM_NOT_SUPPORTED)
-	  printf(&quot;invalid &quot;);
-	if (!ppdict_rget_uint(stream-&gt;dict, &quot;Length&quot;, &amp;length))
-		length = 0;
-	assert(stream-&gt;length == length);
-	printf(&quot;length %lu (/Length %lu)\n&quot;, (unsigned long)stream-&gt;length, (unsigned long)length);
-	print_result_filter(stream, 0);
-	print_result_filter(stream, 1);
-	printf(&quot;\n&quot;);
+{
+  size_t length;
+  printf(&quot;object %lu %lu R\n&quot;, (unsigned long)ref-&gt;number, (unsigned long)ref-&gt;version);
+  if (stream-&gt;flags &amp; PPSTREAM_FILTER)
+    printf(&quot;filtered &quot;);
+  else
+    printf(&quot;plain &quot;);
+  if (stream-&gt;flags &amp; PPSTREAM_IMAGE)
+    printf(&quot;image &quot;);
+  else
+    printf(&quot;stream &quot;);
+  if (stream-&gt;flags &amp; PPSTREAM_ENCRYPTED)
+    printf(&quot;encrypted &quot;);
+  if (stream-&gt;flags &amp; PPSTREAM_NOT_SUPPORTED)
+    printf(&quot;invalid &quot;);
+  if (!ppdict_rget_uint(stream-&gt;dict, &quot;Length&quot;, &amp;length))
+    length = 0;
+  assert(stream-&gt;length == length);
+  printf(&quot;length %lu (/Length %lu)\n&quot;, (unsigned long)stream-&gt;length, (unsigned long)length);
+  print_result_filter(stream, 0);
+  print_result_filter(stream, 1);
+  printf(&quot;\n&quot;);
 }
 
 int main (int argc, const char **argv)
@@ -413,18 +414,18 @@ int main (int argc, const char **argv)
       continue;
     }
     printf(&quot;done.\n&quot;);
-		for (xref = ppdoc_xref(pdf); xref != NULL; xref = ppxref_prev(xref))
-		{
-			for (xi = 0, xsec = xref-&gt;sects; xi &lt; xref-&gt;size; ++xi, ++xsec)
-			{
-				for (refnum = xsec-&gt;first, ref = xsec-&gt;refs; refnum &lt;= xsec-&gt;last; ++refnum, ++ref)
-				{
-					if (ref-&gt;object.type != PPSTREAM)
-					  continue;
-					print_stream_info(ref, ref-&gt;object.stream);
-				}
-			}			
-		}
+    for (xref = ppdoc_xref(pdf); xref != NULL; xref = ppxref_prev(xref))
+    {
+      for (xi = 0, xsec = xref-&gt;sects; xi &lt; xref-&gt;size; ++xi, ++xsec)
+      {
+        for (refnum = xsec-&gt;first, ref = xsec-&gt;refs; refnum &lt;= xsec-&gt;last; ++refnum, ++ref)
+        {
+          if (ref-&gt;object.type != PPSTREAM)
+            continue;
+          print_stream_info(ref, ref-&gt;object.stream);
+        }
+      }
+    }
     ppdoc_free(pdf);
   }
   return 0;
@@ -444,7 +445,7 @@ int main (int argc, const char **argv)
 
 <span class="c1">#include &quot;ppconf.h&quot;</span>
 
-<span class="c1">#define pplib_version &quot;v1.03&quot;</span>
+<span class="c1">#define pplib_version &quot;v1.97 toxic&quot;</span>
 <span class="c1">#define pplib_author &quot;p.jackowski@gust.org.pl&quot;</span>
 
 <span class="o">/*</span> <span class="n">types</span> <span class="o">*/</span>
@@ -452,53 +453,41 @@ int main (int argc, const char **argv)
 <span class="n">typedef</span> <span class="n">int64_t</span> <span class="n">ppint</span><span class="p">;</span>
 <span class="n">typedef</span> <span class="n">size_t</span> <span class="n">ppuint</span><span class="p">;</span> <span class="o">//</span> <span class="n">machine</span> <span class="n">word</span>
 
+<span class="o">//</span><span class="n">typedef</span> <span class="n">uint8_t</span> <span class="n">ppbyte</span><span class="p">;</span>
+<span class="n">typedef</span> <span class="n">char</span> <span class="n">ppbyte</span><span class="p">;</span>
+
 <span class="n">typedef</span> <span class="n">double</span> <span class="n">ppnum</span><span class="p">;</span>
-<span class="n">typedef</span> <span class="n">char</span> <span class="o">*</span> <span class="n">ppname</span><span class="p">;</span>
-<span class="n">typedef</span> <span class="n">char</span> <span class="o">*</span> <span class="n">ppstring</span><span class="p">;</span>
 
-<span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
-  <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
-  <span class="nb">int</span> <span class="n">flags</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">_ppname</span><span class="p">;</span>
+<span class="n">typedef</span> <span class="n">struct</span> <span class="n">ppname</span> <span class="n">ppname</span><span class="p">;</span>
+<span class="n">typedef</span> <span class="n">struct</span> <span class="n">ppstring</span> <span class="n">ppstring</span><span class="p">;</span>
 
-<span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
+<span class="n">struct</span> <span class="n">ppname</span> <span class="p">{</span>
+  <span class="n">ppbyte</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
   <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
+  <span class="n">ppname</span> <span class="o">*</span><span class="n">alterego</span><span class="p">;</span>
   <span class="nb">int</span> <span class="n">flags</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">_ppstring</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">struct</span> <span class="n">ppstring</span> <span class="p">{</span>
+  <span class="n">ppbyte</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+  <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
+  <span class="n">ppstring</span> <span class="o">*</span><span class="n">alterego</span><span class="p">;</span>
+  <span class="nb">int</span> <span class="n">flags</span><span class="p">;</span>
+<span class="p">};</span>
 
 <span class="n">typedef</span> <span class="n">struct</span> <span class="n">ppobj</span> <span class="n">ppobj</span><span class="p">;</span>
 <span class="n">typedef</span> <span class="n">struct</span> <span class="n">ppref</span> <span class="n">ppref</span><span class="p">;</span>
 
-
-<span class="c1">#if ARM_COMPLIANT</span>
-<span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
-  <span class="n">ppobj</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
-  <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
-  <span class="n">ppnum</span> <span class="n">PPARRAY_ALIGNMENT</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">pparray</span><span class="p">;</span>
-<span class="c1">#else</span>
 <span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
   <span class="n">ppobj</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
   <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
 <span class="p">}</span> <span class="n">pparray</span><span class="p">;</span>
-<span class="c1">#endif</span>
 
-
-<span class="c1">#if ARM_COMPLIANT</span>
 <span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
   <span class="n">ppobj</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
-	<span class="n">ppname</span> <span class="o">*</span><span class="n">keys</span><span class="p">;</span>
-  <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
-  <span class="n">ppnum</span> <span class="n">PPDICT_ALIGNMENT</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">ppdict</span><span class="p">;</span>
-
-<span class="c1">#else</span>
-<span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
-  <span class="n">ppobj</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
-	<span class="n">ppname</span> <span class="o">*</span><span class="n">keys</span><span class="p">;</span>
+  <span class="n">ppname</span> <span class="o">**</span><span class="n">keys</span><span class="p">;</span>
   <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
 <span class="p">}</span> <span class="n">ppdict</span><span class="p">;</span>
-<span class="c1">#endif</span>
 
 <span class="n">typedef</span> <span class="n">enum</span> <span class="p">{</span>
   <span class="n">PPSTREAM_BASE16</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
@@ -526,12 +515,12 @@ int main (int argc, const char **argv)
   <span class="n">size_t</span> <span class="n">length</span><span class="p">;</span>
   <span class="n">ppstream_filter</span> <span class="nb">filter</span><span class="p">;</span>
   <span class="n">ppobj</span> <span class="o">*</span><span class="n">filespec</span><span class="p">;</span>
-  <span class="n">ppstring</span> <span class="n">cryptkey</span><span class="p">;</span>
+  <span class="n">ppstring</span> <span class="o">*</span><span class="n">cryptkey</span><span class="p">;</span>
   <span class="nb">int</span> <span class="n">flags</span><span class="p">;</span>
 <span class="p">}</span> <span class="n">ppstream</span><span class="p">;</span>
 
 <span class="n">PPDEF</span> <span class="n">extern</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span> <span class="n">ppstream_filter_name</span><span class="p">[];</span>
-<span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppstream_filter_type</span> <span class="p">(</span><span class="n">ppname</span> <span class="n">filtername</span><span class="p">,</span> <span class="n">ppstreamtp</span> <span class="o">*</span><span class="n">filtertype</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppstream_filter_type</span> <span class="p">(</span><span class="n">ppname</span> <span class="o">*</span><span class="n">filtername</span><span class="p">,</span> <span class="n">ppstreamtp</span> <span class="o">*</span><span class="n">filtertype</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">void</span> <span class="n">ppstream_filter_info</span> <span class="p">(</span><span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="n">ppstream_filter</span> <span class="o">*</span><span class="n">info</span><span class="p">,</span> <span class="nb">int</span> <span class="n">decode</span><span class="p">);</span>
 
 <span class="c1">#define PPSTREAM_FILTER (1&lt;&lt;0)</span>
@@ -564,18 +553,18 @@ int main (int argc, const char **argv)
 <span class="n">PPDEF</span> <span class="n">extern</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span> <span class="n">ppobj_kind</span><span class="p">[];</span>
 
 <span class="n">struct</span> <span class="n">ppobj</span> <span class="p">{</span>
-  <span class="n">ppobjtp</span> <span class="nb">type</span><span class="p">;</span>
   <span class="n">union</span> <span class="p">{</span>
     <span class="n">ppint</span> <span class="n">integer</span><span class="p">;</span>
     <span class="n">ppnum</span> <span class="n">number</span><span class="p">;</span>
-    <span class="n">ppname</span> <span class="n">name</span><span class="p">;</span>
-    <span class="n">ppstring</span> <span class="n">string</span><span class="p">;</span>
+    <span class="n">ppname</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+    <span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">;</span>
     <span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">;</span>
     <span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">;</span>
     <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">;</span>
     <span class="n">ppref</span> <span class="o">*</span><span class="n">ref</span><span class="p">;</span>
     <span class="n">void</span> <span class="o">*</span><span class="nb">any</span><span class="p">;</span>
   <span class="p">};</span>
+  <span class="n">ppobjtp</span> <span class="nb">type</span><span class="p">;</span>
 <span class="p">};</span>
 
 <span class="n">typedef</span> <span class="n">struct</span> <span class="n">ppxref</span> <span class="n">ppxref</span><span class="p">;</span>
@@ -623,34 +612,27 @@ int main (int argc, const char **argv)
 
 <span class="o">/*</span> <span class="n">name</span> <span class="o">*/</span>
 
-<span class="c1">#define ppname_is(name, s) (memcmp(name, s, sizeof(&quot;&quot; s) - 1) == 0)</span>
-<span class="c1">#define ppname_eq(name, n) (memcmp(name, s, ppname_size(name)) == 0)</span>
+<span class="c1">#define ppname_is(name, s) (memcmp((name)-&gt;data, s, sizeof(&quot;&quot; s) - 1) == 0)</span>
+<span class="c1">#define ppname_eq(name, n) (memcmp((name)-&gt;data, s, (name)-&gt;size) == 0)</span>
 
-<span class="c1">#if ARM_COMPLIANT</span>
-<span class="c1">#define _ppname_ghost(name) (((const _ppname *)((void *)name)) - 1)</span>
-<span class="c1">#else</span>
-<span class="c1">#define _ppname_ghost(name) (((const _ppname *)(name)) - 1)</span>
-<span class="c1">#endif</span>
-
-<span class="c1">#define ppname_size(name) (_ppname_ghost(name)-&gt;size)</span>
-<span class="c1">#define ppname_exec(name) (_ppname_ghost(name)-&gt;flags &amp; PPNAME_EXEC)</span>
+<span class="c1">#define ppname_size(name) ((name)-&gt;size)</span>
+<span class="c1">#define ppname_exec(name) ((name)-&gt;flags &amp; PPNAME_EXEC)</span>
+<span class="c1">#define ppname_data(name) ((name)-&gt;data)</span>
 
 <span class="c1">#define PPNAME_ENCODED (1 &lt;&lt; 0)</span>
 <span class="c1">#define PPNAME_DECODED (1 &lt;&lt; 1)</span>
 <span class="c1">#define PPNAME_EXEC (1 &lt;&lt; 1)</span>
 
-<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="n">ppname_decoded</span> <span class="p">(</span><span class="n">ppname</span> <span class="n">name</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="n">ppname_encoded</span> <span class="p">(</span><span class="n">ppname</span> <span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="o">*</span> <span class="n">ppname_decoded</span> <span class="p">(</span><span class="n">ppname</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="o">*</span> <span class="n">ppname_encoded</span> <span class="p">(</span><span class="n">ppname</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+
+<span class="n">PPAPI</span> <span class="n">ppbyte</span> <span class="o">*</span> <span class="n">ppname_decoded_data</span> <span class="p">(</span><span class="n">ppname</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppbyte</span> <span class="o">*</span> <span class="n">ppname_encoded_data</span> <span class="p">(</span><span class="n">ppname</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 
 <span class="o">/*</span> <span class="n">string</span> <span class="o">*/</span>
 
-<span class="c1">#if ARM_COMPLIANT</span>
-<span class="c1">#define _ppstring_ghost(string) (((const _ppstring *)((void *)string)) - 1)</span>
-<span class="c1">#else</span>
-<span class="c1">#define _ppstring_ghost(string) (((const _ppstring *)(string)) - 1)</span>
-<span class="c1">#endif</span>
-
-<span class="c1">#define ppstring_size(string) (_ppstring_ghost(string)-&gt;size)</span>
+<span class="c1">#define ppstring_size(string) ((string)-&gt;size)</span>
+<span class="c1">#define ppstring_data(string) ((string)-&gt;data)</span>
 
 <span class="c1">#define PPSTRING_ENCODED (1 &lt;&lt; 0)</span>
 <span class="c1">#define PPSTRING_DECODED (1 &lt;&lt; 1)</span>
@@ -661,12 +643,15 @@ int main (int argc, const char **argv)
 <span class="c1">#define PPSTRING_UTF16BE (1 &lt;&lt; 5)</span>
 <span class="c1">#define PPSTRING_UTF16LE (1 &lt;&lt; 6)</span>
 
-<span class="c1">#define ppstring_type(string) (_ppstring_ghost(string)-&gt;flags &amp; (PPSTRING_BASE16|PPSTRING_BASE85))</span>
-<span class="c1">#define ppstring_hex(string) (_ppstring_ghost(string)-&gt;flags &amp; PPSTRING_BASE16)</span>
-<span class="c1">#define ppstring_utf(string) (_ppstring_ghost(string)-&gt;flags &amp; (PPSTRING_UTF16BE|PPSTRING_UTF16LE))</span>
+<span class="c1">#define ppstring_type(string) ((string)-&gt;flags &amp; (PPSTRING_BASE16|PPSTRING_BASE85))</span>
+<span class="c1">#define ppstring_hex(string) ((string)-&gt;flags &amp; PPSTRING_BASE16)</span>
+<span class="c1">#define ppstring_utf(string) ((string)-&gt;flags &amp; (PPSTRING_UTF16BE|PPSTRING_UTF16LE))</span>
 
-<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="n">ppstring_decoded</span> <span class="p">(</span><span class="n">ppstring</span> <span class="n">string</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="n">ppstring_encoded</span> <span class="p">(</span><span class="n">ppstring</span> <span class="n">string</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="o">*</span> <span class="n">ppstring_decoded</span> <span class="p">(</span><span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="o">*</span> <span class="n">ppstring_encoded</span> <span class="p">(</span><span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">);</span>
+
+<span class="n">PPAPI</span> <span class="n">ppbyte</span> <span class="o">*</span> <span class="n">ppstring_decoded_data</span> <span class="p">(</span><span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppbyte</span> <span class="o">*</span> <span class="n">ppstring_encoded_data</span> <span class="p">(</span><span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">);</span>
 
 <span class="o">/*</span> <span class="n">array</span> <span class="o">*/</span>
 
@@ -683,8 +668,8 @@ int main (int argc, const char **argv)
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">pparray_get_int</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="n">ppint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">pparray_get_uint</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="n">ppuint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">pparray_get_num</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="n">ppnum</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="n">pparray_get_name</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="n">pparray_get_string</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="o">*</span> <span class="n">pparray_get_name</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="o">*</span> <span class="n">pparray_get_string</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">pparray</span> <span class="o">*</span> <span class="n">pparray_get_array</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppdict</span> <span class="o">*</span> <span class="n">pparray_get_dict</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 <span class="o">//</span><span class="n">PPAPI</span> <span class="n">ppstream</span> <span class="o">*</span> <span class="n">pparray_get_stream</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
@@ -695,8 +680,8 @@ int main (int argc, const char **argv)
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">pparray_rget_int</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="n">ppint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">pparray_rget_uint</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="n">ppuint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">pparray_rget_num</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="n">ppnum</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="n">pparray_rget_name</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="n">pparray_rget_string</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="o">*</span> <span class="n">pparray_rget_name</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="o">*</span> <span class="n">pparray_rget_string</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">pparray</span> <span class="o">*</span> <span class="n">pparray_rget_array</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppdict</span> <span class="o">*</span> <span class="n">pparray_rget_dict</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppstream</span> <span class="o">*</span> <span class="n">pparray_rget_stream</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
@@ -713,8 +698,8 @@ int main (int argc, const char **argv)
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppdict_get_int</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="n">ppint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppdict_get_uint</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="n">ppuint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppdict_get_num</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="n">ppnum</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="n">ppdict_get_name</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="n">ppdict_get_string</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="o">*</span> <span class="n">ppdict_get_name</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="o">*</span> <span class="n">ppdict_get_string</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">pparray</span> <span class="o">*</span> <span class="n">ppdict_get_array</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppdict</span> <span class="o">*</span> <span class="n">ppdict_get_dict</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 <span class="o">//</span><span class="n">PPAPI</span> <span class="n">ppstream</span> <span class="o">*</span> <span class="n">ppdict_get_stream</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
@@ -725,8 +710,8 @@ int main (int argc, const char **argv)
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppdict_rget_int</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="n">ppint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppdict_rget_uint</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="n">ppuint</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="nb">int</span> <span class="n">ppdict_rget_num</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="n">ppnum</span> <span class="o">*</span><span class="n">v</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="n">ppdict_rget_name</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="n">ppdict_rget_string</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppname</span> <span class="o">*</span> <span class="n">ppdict_rget_name</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppstring</span> <span class="o">*</span> <span class="n">ppdict_rget_string</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">pparray</span> <span class="o">*</span> <span class="n">ppdict_rget_array</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppdict</span> <span class="o">*</span> <span class="n">ppdict_rget_dict</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppstream</span> <span class="o">*</span> <span class="n">ppdict_rget_stream</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">name</span><span class="p">);</span>
@@ -814,8 +799,8 @@ int main (int argc, const char **argv)
 
 <span class="o">/*</span> <span class="n">contents</span> <span class="n">parser</span> <span class="o">*/</span>
 
-<span class="n">PPAPI</span> <span class="n">ppobj</span> <span class="o">*</span> <span class="n">ppcontents_first_op</span> <span class="p">(</span><span class="n">ppcontext</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="n">size_t</span> <span class="o">*</span><span class="n">psize</span><span class="p">,</span> <span class="n">ppname</span> <span class="o">*</span><span class="n">pname</span><span class="p">);</span>
-<span class="n">PPAPI</span> <span class="n">ppobj</span> <span class="o">*</span> <span class="n">ppcontents_next_op</span> <span class="p">(</span><span class="n">ppcontext</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="n">size_t</span> <span class="o">*</span><span class="n">psize</span><span class="p">,</span> <span class="n">ppname</span> <span class="o">*</span><span class="n">pname</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppobj</span> <span class="o">*</span> <span class="n">ppcontents_first_op</span> <span class="p">(</span><span class="n">ppcontext</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="n">size_t</span> <span class="o">*</span><span class="n">psize</span><span class="p">,</span> <span class="n">ppname</span> <span class="o">**</span><span class="n">pname</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppobj</span> <span class="o">*</span> <span class="n">ppcontents_next_op</span> <span class="p">(</span><span class="n">ppcontext</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="n">size_t</span> <span class="o">*</span><span class="n">psize</span><span class="p">,</span> <span class="n">ppname</span> <span class="o">**</span><span class="n">pname</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">ppobj</span> <span class="o">*</span> <span class="n">ppcontents_parse</span> <span class="p">(</span><span class="n">ppcontext</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="n">size_t</span> <span class="o">*</span><span class="n">psize</span><span class="p">);</span>
 
 <span class="o">/*</span> <span class="n">boxes</span> <span class="ow">and</span> <span class="n">transforms</span> <span class="o">*/</span>
@@ -896,6 +881,12 @@ Revised streams handling, ppstream API extended</p>
 <h2>v1.05<a class="headerlink" href="#v1-05" title="Permalink to this headline">¶</a></h2>
 <p>Attempt to fix parsing inline images crap</p>
 </div>
+<div class="section" id="v1-97">
+<h2>v1.97<a class="headerlink" href="#v1-97" title="Permalink to this headline">¶</a></h2>
+<p>Deep rework on allocators.
+Deep rework on strings and names.
+Treat as toxic for a while.</p>
+</div>
 </div>
 <div class="section" id="todo">
 <h1>TODO<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h1>
@@ -917,13 +908,13 @@ Revised streams handling, ppstream API extended</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="ppapi.html" title="pplib"
+          <a href="ppapi-1.x.html" title="pplib 1.x"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="pplib.html">pplib 0.1 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2018, p.jackowski@gust.org.pl.
+        &#169; Copyright 2019, p.jackowski@gust.org.pl.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.1.
     </div>
   </body>

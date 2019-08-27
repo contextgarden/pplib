@@ -4,22 +4,22 @@ Examples
 Example 1
 ---------
 
-.. literalinclude:: ../pptest1.c
+.. literalinclude:: ../src/pptest1.c
 
 Example 2
 ---------
 
-.. literalinclude:: ../pptest2.c
+.. literalinclude:: ../src/pptest2.c
 
 Example 3
 ---------
 
-.. literalinclude:: ../pptest3.c
+.. literalinclude:: ../src/pptest3.c
 
 ppapi.h
 -------
 
-.. literalinclude:: ../ppapi.h
+.. literalinclude:: ../src/ppapi.h
 
 
 Changes
@@ -61,6 +61,12 @@ Fixed TIFF predictor for ARM
 v1.05
 -----
 Attempt to fix parsing inline images crap
+
+v1.97
+-----
+Deep rework on allocators.
+Deep rework on strings and names.
+Treat as toxic for a while.
 
 TODO
 ====
