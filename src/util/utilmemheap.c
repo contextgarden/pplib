@@ -24,6 +24,8 @@
 
 heap8 * heap8_init (heap8 *heap, uint8_t space, uint8_t large, uint8_t flags) 
 { 
+  align_space8(space);
+  if (large > space) large = space;
   heap->head = NULL; 
   heap->space = space; 
   heap->large = large; 
@@ -33,6 +35,8 @@ heap8 * heap8_init (heap8 *heap, uint8_t space, uint8_t large, uint8_t flags)
 
 heap16 * heap16_init (heap16 *heap, uint16_t space, uint16_t large, uint8_t flags) 
 { 
+  align_space16(space);
+  if (large > space) large = space;
   heap->head = NULL; 
   heap->space = space; 
   heap->large = large; 
@@ -42,6 +46,8 @@ heap16 * heap16_init (heap16 *heap, uint16_t space, uint16_t large, uint8_t flag
 
 heap32 * heap32_init (heap32 *heap, uint32_t space, uint32_t large, uint8_t flags) 
 { 
+  align_space32(space);
+  if (large > space) large = space;
   heap->head = NULL; 
   heap->space = space; 
   heap->large = large; 
@@ -51,6 +57,8 @@ heap32 * heap32_init (heap32 *heap, uint32_t space, uint32_t large, uint8_t flag
 
 heap64 * heap64_init (heap64 *heap, uint64_t space, uint64_t large, uint8_t flags) 
 { 
+  align_space64(space);
+  if (large > space) large = space;
   heap->head = NULL; 
   heap->space = space; 
   heap->large = large; 

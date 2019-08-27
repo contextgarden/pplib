@@ -118,9 +118,9 @@ iof is an independent interface for buffers written/read byte-by-byte. If used t
 way to write byte data to the heap or stock, without a need for intermediate buffers. The idea is to have iof buffer always ready
 for writing into the heap or stock. The buffer is setup just once, with
 
-  iof *output = setup(iof, heap, atleast) // calls some()
+  iof *output = buffer_init(heap, iof) // calls some(heap, 0)
 
-Then one can write to iof
+Then one can write to iof with
 
   iof_put(output, char);
   iof_write(output, string);
@@ -137,7 +137,24 @@ Once you are done with writing some chunk
   iof_flush() // calls done() and some() again
   
 updates the underlying heap or stock, and makes the iof ready for a new chunk. iof it self does not allocate a memory, so it
-doesn't need finalizer. iof_close(output) doesn't hurt, though.
+doesn't need finalizer, iof_close(output) does nothing. So the cycle looks as follows:
+
+  buffer_init(heap, iof)
+  <write to iof> ... iof_flush(iof)
+  <write to iof> ... iof_flush(iof)
+  ...
+
+More often then not, we need to specify a minimal space for buffer each time, eg. for memcpy() or so. The actual space left
+can be checked with iof_left(iof), the space for recent chunk is iof->space.
+
+We can also work as follows:
+
+  buffer_init(heap, iof)
+  buffer_some(heap, iof) ... <write to iof> ... data = iof_writer_result(iof, &size)
+  buffer_some(heap, iof) ... <write to iof> ... data = iof_writer_result(iof, &size)
+  ...
+
+Identical interface for heap and stock.
 
 Blocks
 ======
@@ -454,12 +471,24 @@ otherwise it needs 4 bytes offset.
 #define block_used32(block) (block->data - block_edge32(block))
 #define block_used64(block) (block->data - block_edge64(block))
 
-/* align requested size to keep ream->data / pyre->data always aligned */
+/* align requested size to keep ream->data / pyre->data always aligned. size is always size_t, no insane overflow checks */
 
-#define align_size8(size) (void)size
+#define align_size8(size) ((void)size)
 #define align_size16(size) ((void)((size & 1) ? (size += 1) : 0))
 #define align_size32(size) ((void)((size & 3) ? (size += 4 - (size & 3)) : 0))
 #define align_size64(size) ((void)((size & 7) ? (size += 8 - (size & 7)) : 0))
+
+/*
+done() and pop() operations decrements block->left space by an aligned size; block->left -= alignedwritten. Lets have 8-bytes aligned
+variant block. If we tell the user there is 15 bytes left (block->left == 15) and the user taked 12. Aligned is 16, we cannot substract.
+We could eventually set block->left to 0, but then pop() operation would no be allowed. Hance, block->left must be aligned. The procedure
+is different than for size (size_t), we cannot cross 0xff/0xffff,... bondaries.
+*/
+
+#define align_space8(space) ((void)space)
+#define align_space16(space) ((void)((space & 1) ? (space < 0xFFFF ? (space += 1) : (space -= 1)) : 0))
+#define align_space32(space) ((void)((space & 3) ? (space < 0xFFFFFFFD ? (space += 4 - (space & 3)) : (space -= (space & 3))) : 0))
+#define align_space64(space) ((void)((space & 7) ? (space < 0xFFFFFFFFFFFFFFF8ULL ? (space += 8 - (space & 7)) : (space -= (space & 7))) : 0))
 
 /* handling ghost structure (stock and pool) */
 
@@ -482,12 +511,12 @@ otherwise it needs 4 bytes offset.
 
 /* ghost <-> block */
 
-#define ghost_block8(ghost, block8) (block8 *)((byte_data(void_data(ghost))) - ghost->offset - sizeof(block8))
-#define ghost_block16(ghost, block16) (block16 *)((byte_data(void_data(ghost))) - ghost->offset - sizeof(block16))
+#define ghost_block8(ghost, block8) ((block8 *)void_data(byte_data(ghost) - ghost->offset - sizeof(block8)))
+#define ghost_block16(ghost, block16) ((block16 *)void_data(byte_data(ghost) - ghost->offset - sizeof(block16)))
 #ifdef BIT32
 #  define ghost_block32(ghost, block32) (ghost->block)
 #else
-#  define ghost_block32(ghost, block32) (block32 *)((byte_data(void_data(ghost))) - ghost->offset - sizeof(block32))
+#  define ghost_block32(ghost, block32) ((block32 *)void_data(byte_data(ghost) - ghost->offset - sizeof(block32)))
 #endif
 #define ghost_block64(ghost, block64) (ghost->block)
 

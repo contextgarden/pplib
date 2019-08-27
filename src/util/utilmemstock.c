@@ -35,6 +35,8 @@
 
 stock8 * stock8_init (stock8 *stock, uint8_t space, uint8_t large, uint8_t flags)
 {
+  align_space8(space);
+  if (large > space) large = space;
   stock->head = NULL;
   stock->space = space;
   stock->large = large;
@@ -45,6 +47,8 @@ stock8 * stock8_init (stock8 *stock, uint8_t space, uint8_t large, uint8_t flags
 stock16 * stock16_init (stock16 *stock, uint16_t space, uint16_t large, uint8_t flags)
 {
   stock->head = NULL;
+  align_space16(space);
+  if (large > space) large = space;
   stock->space = space;
   stock->large = large;
   stock->flags = flags;
@@ -53,6 +57,8 @@ stock16 * stock16_init (stock16 *stock, uint16_t space, uint16_t large, uint8_t 
 
 stock32 * stock32_init (stock32 *stock, uint32_t space, uint32_t large, uint8_t flags)
 {
+  align_space32(space);
+  if (large > space) large = space;
   stock->head = NULL;
   stock->space = space;
   stock->large = large;
@@ -62,6 +68,8 @@ stock32 * stock32_init (stock32 *stock, uint32_t space, uint32_t large, uint8_t 
 
 stock64 * stock64_init (stock64 *stock, uint64_t space, uint64_t large, uint8_t flags)
 {
+  align_space64(space);
+  if (large > space) large = space;
   stock->head = NULL;
   stock->space = space;
   stock->large = large;
