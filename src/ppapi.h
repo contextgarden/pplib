@@ -16,37 +16,30 @@
 typedef int64_t ppint;
 typedef size_t ppuint; // machine word
 
+//typedef uint8_t ppbyte; // names/strings data
+typedef char ppbyte; // names/strings data
+
 typedef double ppnum;
-typedef char * ppname;
-typedef char * ppstring;
 
-typedef struct {
+typedef struct ppname ppname;
+typedef struct ppstring ppstring;
+
+struct ppname {
+  ppbyte *data;
   size_t size;
+  ppname *alterego;
   int flags;
-} _ppname;
+};
 
-typedef struct {
+struct ppstring {
+  ppbyte *data;
   size_t size;
+  ppstring *alterego;
   int flags;
-} _ppstring;
-
-// tmp prefix for new types qq
-
-typedef struct {
-  uint8_t *data;
-  size_t size;
-  int flags;
-} qqstring;
-
-typedef struct {
-  uint8_t *data;
-  size_t size;
-  int flags;
-} qqname;
+};
 
 typedef struct ppobj ppobj;
 typedef struct ppref ppref;
-
 
 typedef struct {
   ppobj *data;
@@ -55,7 +48,7 @@ typedef struct {
 
 typedef struct {
   ppobj *data;
-  ppname *keys;
+  ppname **keys;
   size_t size;
 } ppdict;
 
@@ -85,12 +78,12 @@ typedef struct {
   size_t length;
   ppstream_filter filter;
   ppobj *filespec;
-  ppstring cryptkey;
+  ppstring *cryptkey;
   int flags;
 } ppstream;
 
 PPDEF extern const char * ppstream_filter_name[];
-PPAPI int ppstream_filter_type (ppname filtername, ppstreamtp *filtertype);
+PPAPI int ppstream_filter_type (ppname *filtername, ppstreamtp *filtertype);
 PPAPI void ppstream_filter_info (ppstream *stream, ppstream_filter *info, int decode);
 
 #define PPSTREAM_FILTER (1<<0)
@@ -112,8 +105,8 @@ typedef enum {
   PPBOOL,
   PPINT,
   PPNUM,
-  PPNAME, QQNAME,
-  PPSTRING, QQSTRING,
+  PPNAME,
+  PPSTRING,
   PPARRAY,
   PPDICT,
   PPSTREAM,
@@ -123,18 +116,18 @@ typedef enum {
 PPDEF extern const char * ppobj_kind[];
 
 struct ppobj {
-  ppobjtp type;
   union {
     ppint integer;
     ppnum number;
-    ppname name; qqname *qname;
-    ppstring string; qqstring *qstring;
+    ppname *name;
+    ppstring *string;
     pparray *array;
     ppdict *dict;
     ppstream *stream;
     ppref *ref;
     void *any;
   };
+  ppobjtp type;
 };
 
 typedef struct ppxref ppxref;
@@ -182,26 +175,25 @@ typedef struct ppdoc ppdoc;
 
 /* name */
 
-#define ppname_is(name, s) (memcmp(name, s, sizeof("" s) - 1) == 0)
-#define ppname_eq(name, n) (memcmp(name, s, ppname_size(name)) == 0)
+#define ppname_is(name, s) (memcmp((name)->data, s, sizeof("" s) - 1) == 0)
+#define ppname_eq(name, n) (memcmp((name)->data, s, (name)->size) == 0)
 
-#define _ppname_ghost(name) (((const _ppname *)(name)) - 1)
-
-#define ppname_size(name) (_ppname_ghost(name)->size)
-#define ppname_exec(name) (_ppname_ghost(name)->flags & PPNAME_EXEC)
+#define ppname_size(name) ((name)->size)
+#define ppname_exec(name) ((name)->flags & PPNAME_EXEC)
 
 #define PPNAME_ENCODED (1 << 0)
 #define PPNAME_DECODED (1 << 1)
 #define PPNAME_EXEC (1 << 1)
 
-PPAPI ppname ppname_decoded (ppname name);
-PPAPI ppname ppname_encoded (ppname name);
+PPAPI ppname * ppname_decoded (ppname *name);
+PPAPI ppname * ppname_encoded (ppname *name);
+
+PPAPI ppbyte * ppname_decoded_data (ppname *name);
+PPAPI ppbyte * ppname_encoded_data (ppname *name);
 
 /* string */
 
-#define _ppstring_ghost(string) (((const _ppstring *)(string)) - 1)
-
-#define ppstring_size(string) (_ppstring_ghost(string)->size)
+#define ppstring_size(string) ((string)->size)
 
 #define PPSTRING_ENCODED (1 << 0)
 #define PPSTRING_DECODED (1 << 1)
@@ -212,12 +204,15 @@ PPAPI ppname ppname_encoded (ppname name);
 #define PPSTRING_UTF16BE (1 << 5)
 #define PPSTRING_UTF16LE (1 << 6)
 
-#define ppstring_type(string) (_ppstring_ghost(string)->flags & (PPSTRING_BASE16|PPSTRING_BASE85))
-#define ppstring_hex(string) (_ppstring_ghost(string)->flags & PPSTRING_BASE16)
-#define ppstring_utf(string) (_ppstring_ghost(string)->flags & (PPSTRING_UTF16BE|PPSTRING_UTF16LE))
+#define ppstring_type(string) ((string)->flags & (PPSTRING_BASE16|PPSTRING_BASE85))
+#define ppstring_hex(string) ((string)->flags & PPSTRING_BASE16)
+#define ppstring_utf(string) ((string)->flags & (PPSTRING_UTF16BE|PPSTRING_UTF16LE))
 
-PPAPI ppstring ppstring_decoded (ppstring string);
-PPAPI ppstring ppstring_encoded (ppstring string);
+PPAPI ppstring * ppstring_decoded (ppstring *string);
+PPAPI ppstring * ppstring_encoded (ppstring *string);
+
+PPAPI ppbyte * ppstring_decoded_data (ppstring *string);
+PPAPI ppbyte * ppstring_encoded_data (ppstring *string);
 
 /* array */
 
@@ -234,8 +229,8 @@ PPAPI int pparray_get_bool (pparray *array, size_t index, int *v);
 PPAPI int pparray_get_int (pparray *array, size_t index, ppint *v);
 PPAPI int pparray_get_uint (pparray *array, size_t index, ppuint *v);
 PPAPI int pparray_get_num (pparray *array, size_t index, ppnum *v);
-PPAPI ppname pparray_get_name (pparray *array, size_t index);
-PPAPI ppstring pparray_get_string (pparray *array, size_t index);
+PPAPI ppname * pparray_get_name (pparray *array, size_t index);
+PPAPI ppstring * pparray_get_string (pparray *array, size_t index);
 PPAPI pparray * pparray_get_array (pparray *array, size_t index);
 PPAPI ppdict * pparray_get_dict (pparray *array, size_t index);
 //PPAPI ppstream * pparray_get_stream (pparray *array, size_t index);
@@ -246,8 +241,8 @@ PPAPI int pparray_rget_bool (pparray *array, size_t index, int *v);
 PPAPI int pparray_rget_int (pparray *array, size_t index, ppint *v);
 PPAPI int pparray_rget_uint (pparray *array, size_t index, ppuint *v);
 PPAPI int pparray_rget_num (pparray *array, size_t index, ppnum *v);
-PPAPI ppname pparray_rget_name (pparray *array, size_t index);
-PPAPI ppstring pparray_rget_string (pparray *array, size_t index);
+PPAPI ppname * pparray_rget_name (pparray *array, size_t index);
+PPAPI ppstring * pparray_rget_string (pparray *array, size_t index);
 PPAPI pparray * pparray_rget_array (pparray *array, size_t index);
 PPAPI ppdict * pparray_rget_dict (pparray *array, size_t index);
 PPAPI ppstream * pparray_rget_stream (pparray *array, size_t index);
@@ -264,8 +259,8 @@ PPAPI int ppdict_get_bool (ppdict *dict, const char *name, int *v);
 PPAPI int ppdict_get_int (ppdict *dict, const char *name, ppint *v);
 PPAPI int ppdict_get_uint (ppdict *dict, const char *name, ppuint *v);
 PPAPI int ppdict_get_num (ppdict *dict, const char *name, ppnum *v);
-PPAPI ppname ppdict_get_name (ppdict *dict, const char *name);
-PPAPI ppstring ppdict_get_string (ppdict *dict, const char *name);
+PPAPI ppname * ppdict_get_name (ppdict *dict, const char *name);
+PPAPI ppstring * ppdict_get_string (ppdict *dict, const char *name);
 PPAPI pparray * ppdict_get_array (ppdict *dict, const char *name);
 PPAPI ppdict * ppdict_get_dict (ppdict *dict, const char *name);
 //PPAPI ppstream * ppdict_get_stream (ppdict *dict, const char *name);
@@ -276,8 +271,8 @@ PPAPI int ppdict_rget_bool (ppdict *dict, const char *name, int *v);
 PPAPI int ppdict_rget_int (ppdict *dict, const char *name, ppint *v);
 PPAPI int ppdict_rget_uint (ppdict *dict, const char *name, ppuint *v);
 PPAPI int ppdict_rget_num (ppdict *dict, const char *name, ppnum *v);
-PPAPI ppname ppdict_rget_name (ppdict *dict, const char *name);
-PPAPI ppstring ppdict_rget_string (ppdict *dict, const char *name);
+PPAPI ppname * ppdict_rget_name (ppdict *dict, const char *name);
+PPAPI ppstring * ppdict_rget_string (ppdict *dict, const char *name);
 PPAPI pparray * ppdict_rget_array (ppdict *dict, const char *name);
 PPAPI ppdict * ppdict_rget_dict (ppdict *dict, const char *name);
 PPAPI ppstream * ppdict_rget_stream (ppdict *dict, const char *name);
@@ -365,8 +360,8 @@ PPAPI void ppcontext_free (ppcontext *context);
 
 /* contents parser */
 
-PPAPI ppobj * ppcontents_first_op (ppcontext *context, ppstream *stream, size_t *psize, ppname *pname);
-PPAPI ppobj * ppcontents_next_op (ppcontext *context, ppstream *stream, size_t *psize, ppname *pname);
+PPAPI ppobj * ppcontents_first_op (ppcontext *context, ppstream *stream, size_t *psize, ppname **pname);
+PPAPI ppobj * ppcontents_next_op (ppcontext *context, ppstream *stream, size_t *psize, ppname **pname);
 PPAPI ppobj * ppcontents_parse (ppcontext *context, ppstream *stream, size_t *psize);
 
 /* boxes and transforms */

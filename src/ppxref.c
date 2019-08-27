@@ -9,8 +9,8 @@ ppxref * ppxref_create (ppdoc *pdf, size_t initsize, size_t xrefoffset)
 
   if (initsize == 0) // unknown
     initsize = PPXREF_MAP_INIT;
-  xref = (ppxref *)qqstruct_take(&pdf->qheap, sizeof(ppxref));
-  xref->sects = (ppxsec *)qqstruct_take(&pdf->qheap, initsize * sizeof(ppxsec));
+  xref = (ppxref *)ppstruct_take(&pdf->heap, sizeof(ppxref));
+  xref->sects = (ppxsec *)ppstruct_take(&pdf->heap, initsize * sizeof(ppxsec));
   xref->size = 0;
   xref->space = initsize;
   xref->count = 0;
@@ -22,14 +22,14 @@ ppxref * ppxref_create (ppdoc *pdf, size_t initsize, size_t xrefoffset)
   return xref;
 }
 
-ppxsec * ppxref_push_section (ppxref *xref, qqheap *qheap)
+ppxsec * ppxref_push_section (ppxref *xref, ppheap *heap)
 {
   ppxsec *sects;
   if (xref->size < xref->space)
     return &xref->sects[xref->size++];
   xref->space <<= 1;
   sects = xref->sects;
-  xref->sects = (ppxsec *)qqstruct_take(qheap, xref->space * sizeof(ppxsec)); // waste but rare
+  xref->sects = (ppxsec *)ppstruct_take(heap, xref->space * sizeof(ppxsec)); // waste but rare
   memcpy(xref->sects, sects, xref->size * sizeof(ppxsec));
   return &xref->sects[xref->size++];
 }
@@ -41,13 +41,13 @@ ppxsec * ppxref_push_section (ppxref *xref, qqheap *qheap)
     For xref streams we have explicit num of sections. */
 
 /*
-void ppxref_done_sections (ppxref *xref, qqheap *qheap)
+void ppxref_done_sections (ppxref *xref, ppheap *heap)
 { // if xref->sects was initialized with mallocted array we could do
   ppxsec *sects;
   size_t size;
   sects = xref->sects;
   size = xref->size * sizeof(ppxsec);
-  xref->sects = (ppxsec *)qqstruct_take(qheap, size);
+  xref->sects = (ppxsec *)ppstruct_take(heap, size);
   memcpy(xref->sects, sects, size);
   pp_free(sects);
   xref->space = xref->size;

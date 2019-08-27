@@ -51,7 +51,7 @@ int main (int argc, const char **argv)
   size_t size;
   ppcontext *context;
   ppobj *obj;
-  ppname op;
+  ppname *op;
   size_t operators;
 
   if (argc < 2)

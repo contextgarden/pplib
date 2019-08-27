@@ -33,15 +33,15 @@ static const char * crypt_info (ppdoc *pdf)
 static void print_info (ppdoc *pdf)
 {
   ppdict *info;
-  ppstring creator, producer;
+  ppstring *creator, *producer;
   size_t memused, memwaste;
 
   if ((info = ppdoc_info(pdf)) != NULL)
   {
     if ((creator = ppdict_rget_string(info, "Creator")) != NULL)
-      printf("  creator: %s\n", ppstring_decoded(creator));
+      printf("  creator: %s\n", ppstring_decoded_data(creator));
     if ((producer = ppdict_rget_string(info, "Producer")) != NULL)
-      printf("  producer: %s\n", ppstring_decoded(producer));
+      printf("  producer: %s\n", ppstring_decoded_data(producer));
   }
   printf("  version: %s\n", ppdoc_version_string(pdf));
   printf("  protection: %s\n", crypt_info(pdf));

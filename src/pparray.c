@@ -1,11 +1,11 @@
 
 #include "pplib.h"
 
-pparray * pparray_create (const ppobj *stackpos, size_t size, qqheap *qheap)
+pparray * pparray_create (const ppobj *stackpos, size_t size, ppheap *heap)
 {
   pparray *array;
   ppobj *data;
-  array = (pparray *)qqstruct_take(qheap, sizeof(pparray) + size * sizeof(ppobj));
+  array = (pparray *)ppstruct_take(heap, sizeof(pparray) + size * sizeof(ppobj));
   array->size = size;
   array->data = data = (ppobj *)(array + 1);
   memcpy(data, stackpos, size * sizeof(ppobj));
@@ -71,25 +71,25 @@ int pparray_rget_num (pparray *array, size_t index, ppnum *v)
   return (obj = pparray_get(array, index)) != NULL ? ppobj_rget_num(obj, *v) : 0;
 }
 
-ppname pparray_get_name (pparray *array, size_t index)
+ppname * pparray_get_name (pparray *array, size_t index)
 {
   ppobj *obj;
   return (obj = pparray_get(array, index)) != NULL ? ppobj_get_name(obj) : NULL;
 }
 
-ppname pparray_rget_name (pparray *array, size_t index)
+ppname * pparray_rget_name (pparray *array, size_t index)
 {
   ppobj *obj;
   return (obj = pparray_get(array, index)) != NULL ? ppobj_rget_name(obj) : NULL;
 }
 
-ppstring pparray_get_string (pparray *array, size_t index)
+ppstring * pparray_get_string (pparray *array, size_t index)
 {
   ppobj *obj;
   return (obj = pparray_get(array, index)) != NULL ? ppobj_get_string(obj) : NULL;
 }
 
-ppstring pparray_rget_string (pparray *array, size_t index)
+ppstring * pparray_rget_string (pparray *array, size_t index)
 {
   ppobj *obj;
   return (obj = pparray_get(array, index)) != NULL ? ppobj_rget_string(obj) : NULL;

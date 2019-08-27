@@ -3,56 +3,38 @@
 
 #define PPBYTES_HEAP_BLOCK 0xFFF
 #define PPBYTES_HEAP_LARGE (PPBYTES_HEAP_BLOCK >> 2)
-#define PPBYTES_HEAP_LEAST 4
 #define PPSTRUCT_HEAP_BLOCK 0xFFF
 #define PPSTRUCT_HEAP_LARGE (PPSTRUCT_HEAP_BLOCK >> 2)
 
-void qqheap_init (qqheap *qheap)
+void ppheap_init (ppheap *heap)
 {
-  qqstruct_heap_init(&qheap->structheap, PPSTRUCT_HEAP_BLOCK, PPSTRUCT_HEAP_LARGE, 0);
-  qqbytes_heap_init(&qheap->bytesheap, PPBYTES_HEAP_BLOCK, PPBYTES_HEAP_LARGE, 0);
-  qqbytes_heap_setup_buffer(&qheap->bytesheap, &qheap->bytesbuffer, PPBYTES_HEAP_LEAST);
+  ppstruct_heap_init(heap, PPSTRUCT_HEAP_BLOCK, PPSTRUCT_HEAP_LARGE, 0);
+  ppbytes_heap_init(heap, PPBYTES_HEAP_BLOCK, PPBYTES_HEAP_LARGE, 0);
 }
 
-void qqheap_free (qqheap *qheap)
+void ppheap_free (ppheap *heap)
 {
-  qqstruct_heap_free(&qheap->structheap);
-  qqbytes_heap_free(&qheap->bytesheap);
+  ppstruct_heap_free(heap);
+  ppbytes_heap_free(heap);
 }
 
-void qqheap_renew (qqheap *qheap)
+void ppheap_renew (ppheap *heap)
 {
-  qqstruct_heap_clear(&qheap->structheap);
-  qqbytes_heap_clear(&qheap->bytesheap);
-  qqbytes_heap_setup_buffer(&qheap->bytesheap, &qheap->bytesbuffer, PPBYTES_HEAP_LEAST);
+  ppstruct_heap_clear(heap);
+  ppbytes_heap_clear(heap);
+  ppbytes_buffer_init(heap);
 }
 
-// qq tmp, to have same interface for a while. names and strings will be allocated from as other structs,
-// initsize will be constant, so qqheap_buffer() will just return its permanent;y ready &qheap->bytesbuffer
-iof * qqheap_buffer (qqheap *qheap, size_t objectsize, size_t initsize)
+void * ppbytes_flush (ppheap *heap, iof *O, size_t *psize)
 {
-  iof *O;
-  size_t space;
-  O = qqbytes_buffer(qheap);
-  O->buf = qqbytes_heap_some(&qheap->bytesheap, objectsize + initsize, &space);
-  O->pos = O->buf + objectsize;
-  O->end = O->buf + space;
-  return O;
-}
-
-// qq tmp iof_flush() does the same interface as before
-void * qqheap_flush (iof *O, size_t *psize)
-{
-  qqbytes_heap *qheap;
   void *data;
-  //size_t space;
-  qheap = (qqbytes_heap *)O->link;
+  size_t size;
+  
+  //ASSERT(&heap->bytesheap == O->link);
+  iof_put(O, '\0');
   data = O->buf;
-  *psize = (size_t)iof_size(O);
-  qqbytes_heap_done(qheap, data, *psize);
-  // makes no sense until we do that on every qqheap_buffer(); all that stuff will go
-  //O->buf = qqbytes_heap_some(qheap, 0, &space);
-  //O->pos = O->buf;
-  //O->end = O->buf + space;
+  size = (size_t)iof_size(O);
+  ppbytes_heap_done(heap, data, size);
+  *psize = size - 1;
   return data;
 }

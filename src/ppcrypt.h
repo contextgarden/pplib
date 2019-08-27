@@ -61,7 +61,7 @@ int ppstring_decrypt (ppcrypt *crypt, const void *input, size_t size, void *outp
 #define ppcrypt_end_ref(crypt) ((crypt)->ref = NULL, (crypt)->cryptkeylength = 0)
 #define ppcrypt_ref(pdf, crypt) ((crypt = (pdf)->crypt) != NULL && crypt->ref != NULL)
 
-int ppcrypt_type (ppcrypt *crypt, ppname cryptname, ppuint *length, int *cryptflags);
-ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, qqheap *qheap);
+int ppcrypt_type (ppcrypt *crypt, ppname *cryptname, ppuint *length, int *cryptflags);
+ppstring * ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, ppheap *heap);
 
 #endif

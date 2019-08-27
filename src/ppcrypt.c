@@ -6,21 +6,21 @@
 
 /* crypt struct */
 
-static ppcrypt * ppcrypt_create (qqheap *qheap)
+static ppcrypt * ppcrypt_create (ppheap *heap)
 {
   ppcrypt *crypt;
-  crypt = (ppcrypt *)qqstruct_take(qheap, sizeof(ppcrypt));
+  crypt = (ppcrypt *)ppstruct_take(heap, sizeof(ppcrypt));
   memset(crypt, 0, sizeof(ppcrypt));
   return crypt;
 }
 
-int ppcrypt_type (ppcrypt *crypt, ppname cryptname, ppuint *length, int *cryptflags)
+int ppcrypt_type (ppcrypt *crypt, ppname *cryptname, ppuint *length, int *cryptflags)
 {
   ppdict *filterdict;
-  ppname filtertype;
+  ppname *filtertype;
   int cryptmd = 0, default256 = 0;
 
-  if (crypt->map == NULL || (filterdict = ppdict_rget_dict(crypt->map, cryptname)) == NULL)
+  if (crypt->map == NULL || (filterdict = ppdict_rget_dict(crypt->map, cryptname->data)) == NULL)
     return 0;
   if ((filtertype = ppdict_get_name(filterdict, "CFM")) == NULL)
     return 0;
@@ -169,13 +169,13 @@ static void ppcrypt_userkey (ppcrypt *crypt, const void *id, size_t idsize, uint
 
 static const uint8_t nulliv[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; /* AES-256 initialization vector */
 
-static ppcrypt_status ppcrypt_authenticate_perms (ppcrypt *crypt, ppstring perms)
+static ppcrypt_status ppcrypt_authenticate_perms (ppcrypt *crypt, ppstring *perms)
 { /* decode /Perms string overriding crypt setup (should match anyway) */
   uint8_t permsdata[16];
   //int64_t p;
   //int i;
 
-  aes_decode_data(perms, ppstring_size(perms), permsdata, crypt->filekey, crypt->filekeylength, nulliv, AES_NULL_PADDING);
+  aes_decode_data(perms->data, perms->size, permsdata, crypt->filekey, crypt->filekeylength, nulliv, AES_NULL_PADDING);
 
   if (permsdata[9] != 'a' || permsdata[10] != 'd' || permsdata[11] != 'b')
     return PPCRYPT_FAIL;
@@ -198,11 +198,11 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
   ppcrypt *crypt;
   ppdict *trailer, *encrypt;
   ppobj *obj;
-  ppname name, *pkey;
-  ppstring userkey, ownerkey, userkey_e = NULL, ownerkey_e = NULL;
+  ppname *name, **pkey;
+  ppstring *userkey, *ownerkey, *userkey_e = NULL, *ownerkey_e = NULL;
   size_t hashlength;
   pparray *idarray;
-  ppstring id = NULL, perms = NULL;
+  ppstring *id = NULL, *perms = NULL;
   int cryptflags, encryptmd;
   size_t strkeylength, stmkeylength;
 
@@ -226,7 +226,7 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
     return PPCRYPT_FAIL;
 
   if ((crypt = pdf->crypt) == NULL)
-    crypt = pdf->crypt = ppcrypt_create(&pdf->qheap);
+    crypt = pdf->crypt = ppcrypt_create(&pdf->heap);
   if (!ppdict_get_uint(encrypt, "V", &crypt->algorithm_variant))
     crypt->algorithm_variant = 0;
   if (crypt->algorithm_variant < 1 || crypt->algorithm_variant > 5)
@@ -243,7 +243,7 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
   ownerkey = ppstring_decoded(ownerkey);
   /* for some reason acrobat pads /O and /U to 127 bytes with NULL, so we don't check the exact length but ensure the minimal */
   hashlength = crypt->algorithm_variant < 5 ? 32 : 48;
-  if (ppstring_size(userkey) < hashlength || ppstring_size(ownerkey) < hashlength)
+  if (userkey->size < hashlength || ownerkey->size < hashlength)
     return PPCRYPT_FAIL;
   if (crypt->algorithm_variant < 5)
   { // get first string from /ID (must not be ref)
@@ -257,12 +257,12 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
       return PPCRYPT_FAIL;
     userkey_e = ppstring_decoded(userkey_e);
     ownerkey_e = ppstring_decoded(ownerkey_e);
-    if (ppstring_size(userkey_e) < 32 || ppstring_size(ownerkey_e) < 32)
+    if (userkey_e->size < 32 || ownerkey_e->size < 32)
       return PPCRYPT_FAIL;
     if ((perms = ppdict_get_string(encrypt, "Perms")) == NULL)
       return PPCRYPT_FAIL;
     perms = ppstring_decoded(perms);
-    if (ppstring_size(perms) != 16)
+    if (perms->size != 16)
       return PPCRYPT_FAIL;
   }
 
@@ -347,9 +347,9 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
 
   if (crypt->algorithm_variant < 5)
   { /* authenticate by comparing a generated vs present /U entry; depending on variant 16 or 32 bytes to compare */
-    ppcrypt_filekey(crypt, ownerkey, ppstring_size(ownerkey), id, ppstring_size(id));
-    ppcrypt_userkey(crypt, id, ppstring_size(id), password_hash); /* needs file key so comes after key generation */
-    if (memcmp(userkey, password_hash, (crypt->algorithm_revision >= 3 ? 16 : 32)) == 0)
+    ppcrypt_filekey(crypt, ownerkey->data, ownerkey->size, id->data, id->size);
+    ppcrypt_userkey(crypt, id->data, id->size, password_hash); /* needs file key so comes after key generation */
+    if (memcmp(userkey->data, password_hash, (crypt->algorithm_revision >= 3 ? 16 : 32)) == 0)
       return PPCRYPT_DONE;
     return PPCRYPT_PASS;
   }
@@ -362,13 +362,13 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
     sha256_digest_add(&sha, crypt->userpass, crypt->userpasslength);
     sha256_digest_add(&sha, validation_salt, 8);
     sha256_digest_put(&sha, password_hash);
-    if (memcmp(userkey, password_hash, 32) != 0)
+    if (memcmp(userkey->data, password_hash, 32) != 0)
       return PPCRYPT_PASS;
     sha256_digest_init(&sha);
     sha256_digest_add(&sha, crypt->userpass, crypt->userpasslength);
     sha256_digest_add(&sha, key_salt, 8);
     sha256_digest_put(&sha, password_hash);
-    aes_decode_data(userkey_e, 32, crypt->filekey, password_hash, 32, nulliv, AES_NULL_PADDING);
+    aes_decode_data(userkey_e->data, 32, crypt->filekey, password_hash, 32, nulliv, AES_NULL_PADDING);
     return ppcrypt_authenticate_perms(crypt, perms);
   }
   if (crypt->flags & PPCRYPT_OWNER_PASSWORD)
@@ -382,14 +382,14 @@ ppcrypt_status ppdoc_crypt_init (ppdoc *pdf, const void *userpass, size_t userpa
     sha256_digest_add(&sha, validation_salt, 8);
     sha256_digest_add(&sha, userkey, 48);
     sha256_digest_put(&sha, password_hash);
-    if (memcmp(ownerkey, password_hash, 32) != 0)
+    if (memcmp(ownerkey->data, password_hash, 32) != 0)
       return PPCRYPT_PASS;
     sha256_digest_init(&sha);
     sha256_digest_add(&sha, crypt->ownerpass, crypt->ownerpasslength);
     sha256_digest_add(&sha, key_salt, 8);
     sha256_digest_add(&sha, userkey, 48);
     sha256_digest_put(&sha, password_hash);
-    aes_decode_data(ownerkey_e, 32, crypt->filekey, password_hash, 32, nulliv, AES_NULL_PADDING);
+    aes_decode_data(ownerkey_e->data, 32, crypt->filekey, password_hash, 32, nulliv, AES_NULL_PADDING);
     return ppcrypt_authenticate_perms(crypt, perms);
   }
   return PPCRYPT_FAIL; // should never get here
@@ -490,9 +490,9 @@ Since streams and strings might theoretically be encrypted with different filter
 decryption state here.
 */
 
-ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, qqheap *qheap)
+ppstring * ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, ppheap *heap)
 {
-  ppstring cryptkeystring;
+  ppstring *cryptkeystring;
   //if (crypt->cryptkeylength > 0)
   //  return;
 
@@ -520,6 +520,6 @@ ppstring ppcrypt_stmkey (ppcrypt *crypt, ppref *ref, int aes, qqheap *qheap)
     memcpy(crypt->cryptkey, crypt->filekey, 32); // just for the record
     crypt->cryptkeylength = 32;
   }
-  cryptkeystring = ppstring_internal(crypt->cryptkey, crypt->cryptkeylength, qheap);
+  cryptkeystring = ppstring_internal(crypt->cryptkey, crypt->cryptkeylength, heap);
   return ppstring_decoded(cryptkeystring);
 }

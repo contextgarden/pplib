@@ -1,9 +1,7 @@
 
-#include <utilbasexx.h>
-
 #include "pplib.h"
 
-const char * ppobj_kind[] = { "none", "null", "bool", "integer", "number", "name", "qqname", "string", "qqstring", "array", "dict", "stream", "ref" };
+const char * ppobj_kind[] = { "none", "null", "bool", "integer", "number", "name", "string", "array", "dict", "stream", "ref" };
 
 #define ignored_char(c) (c == 0x20 || c == 0x0A || c == 0x0D || c == 0x09 || c == 0x00)
 #define newline_char(c) (c == 0x0A || c == 0x0D)
@@ -19,20 +17,28 @@ const char * ppobj_kind[] = { "none", "null", "bool", "integer", "number", "name
 static const char * ppref_str (ppuint refnumber, ppuint refversion)
 {
   static char buffer[MAX_INT_DIGITS + 1 + MAX_INT_DIGITS + 1 + 1 + 1];
-#if defined(MSVC64)|| defined(MINGW64)
-  sprintf(buffer, PPUINTF " " PPUINTF " R", refnumber, refversion);
-#else
-  sprintf(buffer, PPUINTF " " PPUINTF " R", (unsigned long)(refnumber), (unsigned long)(refversion));
-#endif
+  sprintf(buffer, "%lu %lu R", (unsigned long)(refnumber), (unsigned long)(refversion));
   return buffer;
 }
 
 /* name */
 
+/*
+pdf spec page 57:
+"The name may include any regular characters, but not delimiter or white-space characters (see Section 3.1, “Lexical Conventions”)."
+"The token / (a slash followed by no regular characters) is a valid name"
+"Beginning with PDF 1.2, any character except null (character code 0) may be included in a name by writing its 2-digit hexadecimal code,
+preceded by the number sign character (#); see implementation notes 3 and 4 in Appendix H. This syntax is required to represent any of the
+delimiter or white-space characters or the number sign character itself; it is recommended but not required for characters whose codes
+are outside the range 33 (!) to 126 (~)."
+
+This suggests we should accept bytes 128..255 as a part of the name.
+*/
+
 // pdf name delimiters: 0..32, ()<>[]{}/%
 // # treated specially
 // .+- are valid part of name; keep in mind names such as -| | |- .notdef ABCDEF+Font etc.
-const char ppname_byte_lookup[] = {
+static const char ppname_byte_lookup[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 1, 1, '#', 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0,
@@ -51,179 +57,213 @@ const char ppname_byte_lookup[] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-#define PPNAME_INIT (8+1)
+/*
+20190827: The end of the name is any byte with 0 lookup value. When reading a ref object or objstm stream containing
+a single name, we may get input byte IOFEOF (-1), which must not be treated as 255. So a check for (c >= 0) is needed,
+otherwise we keep writing byte 255 to the output buffer until not enough memory.
+*/
 
-#define ppname_flush(O, ghost, siz, flgs) \
-  (iof_put(O, '\0'), \
-   ghost = (_ppname *)qqheap_flush(O, &siz), \
-   ghost->flags = flgs, \
-   ghost->size = siz - sizeof(_ppname) - 1, \
-  (ppname)(ghost + 1))
+#define ppnamebyte(c) (c >= 0 && ppname_byte_lookup[(uint8_t)(c)])
 
-#define ppname_flush_with_ego(O, ghost, siz, flgs) \
-  (iof_put(O, '\0'), \
-   iof_ensure(O, sizeof(ppname *)), \
-   O->pos += sizeof(ppname *), \
-   ghost = (_ppname *)qqheap_flush(O, &siz), \
-   ghost->flags = flgs, \
-   ghost->size = siz - sizeof(_ppname) - 1 - sizeof(ppname *), \
-  (ppname)(ghost + 1))
+static const char pphex_byte_lookup[] = {
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+   0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,
+  -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+};
 
-#define ppname_set_alter_ego(name, ghost, ego) (*((ppname *)((void *)(name + (ghost)->size + 1))) = ego)
+/* no need for (c >= 0) check here */
 
-#define ppname_get_alter_ego(name) (*((ppname *)((void *)(name + ppname_size(name) + 1))))
+#define pphex(c) pphex_byte_lookup[(uint8_t)(c)]
 
-static ppname ppscan_name (iof *I, qqheap *qheap)
+#define PPNAME_INIT (7 + 1)
+
+static ppname * ppscan_name (iof *I, ppheap *heap)
 {
-  int c, decode;
+  ppname *encoded, *decoded;
   iof *O;
-  _ppname *ghost1, *ghost2;
-  ppname encoded, decoded;
-  size_t size;
-  const char *p, *e;
-  uint8_t v1, v2;
+  int decode, c;
+  ppbyte *p, *e;
+  char h1, h2;
 
-  O = qqheap_buffer(qheap, sizeof(_ppname), PPNAME_INIT);
-  for (decode = 0, c = iof_char(I); c >= 0 && ppname_byte_lookup[c]; c = iof_next(I))
+  O = ppbytes_buffer(heap, PPNAME_INIT);
+  for (decode = 0, c = iof_char(I); ppnamebyte(c); c = iof_next(I))
   {
-    if (c == '#')
-      decode = 1;
+    if (c == '#') decode = 1;
     iof_put(O, c);
   }
-  if (!decode)
-    return ppname_flush(O, ghost1, size, 0);
-  encoded = ppname_flush_with_ego(O, ghost1, size, 0|PPNAME_ENCODED);
-  O = qqheap_buffer(qheap, sizeof(_ppname), PPNAME_INIT);
-  for (p = encoded, e = encoded + ghost1->size; p < e; ++p)
+  encoded = (ppname *)ppstruct_take(heap, sizeof(ppname));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+  if (decode)
   {
-    if (*p == '#' && p + 2 < e) {
-      v1 = base16_value(p[1]);
-      v2 = base16_value(p[2]);
-      iof_put(O, ((v1<<4)+v2));
-      p += 2;
+    O = ppbytes_buffer(heap, encoded->size); // decoded always a bit smaller
+    for (p = encoded->data, e = p + encoded->size; p < e; ++p)
+    {
+      if (*p == '#' && p + 2 < e && (h1 = pphex(p[1])) >= 0 && (h2 = pphex(p[2])) >= 0) 
+      {
+        iof_set(O, ((h1 << 4)|h2));
+        p += 2;
+      }
+      else
+        iof_set(O, *p);
     }
-    else
-      iof_put(O, *p);
+    decoded = (ppname *)ppstruct_take(heap, sizeof(ppname));
+    decoded->data = ppbytes_flush(heap, O, &decoded->size);
+    encoded->flags = PPNAME_ENCODED;
+    decoded->flags = PPNAME_DECODED;    
+    encoded->alterego = decoded, decoded->alterego = encoded;
   }
-  decoded = ppname_flush_with_ego(O, ghost2, size, 0|PPNAME_DECODED);
-  ppname_set_alter_ego(encoded, ghost1, decoded);
-  ppname_set_alter_ego(decoded, ghost2, encoded);
+  else
+  {
+    encoded->flags = 0;
+    encoded->alterego = encoded;
+  }
   return encoded;
 }
 
-static ppname ppscan_exec (iof *I, qqheap *qheap, int first)
+static ppname * ppscan_exec (iof *I, ppheap *heap, uint8_t firstbyte)
 {
-  int c, decode;
+  ppname *encoded, *decoded;
   iof *O;
-  _ppname *ghost1, *ghost2;
-  ppname encoded, decoded;
-  size_t size;
-  const char *p, *e;
-  uint8_t v1, v2;
-  O = qqheap_buffer(qheap, sizeof(_ppname), PPNAME_INIT);
-  iof_put(O, first);
-  for (decode = 0, c = iof_char(I); c >= 0 && ppname_byte_lookup[c]; c = iof_next(I))
+  int decode, c;
+  ppbyte *p, *e;
+  char h1, h2;
+
+  O = ppbytes_buffer(heap, PPNAME_INIT);
+  iof_put(O, firstbyte);
+  for (decode = 0, c = iof_char(I); ppnamebyte(c); c = iof_next(I))
   {
-    if (c == '#')
-      decode = 1;
+    if (c == '#') decode = 1;
     iof_put(O, c);
   }
-  if (!decode)
-    return ppname_flush(O, ghost1, size, PPNAME_EXEC);
-  encoded = ppname_flush_with_ego(O, ghost1, size, PPNAME_EXEC|PPNAME_ENCODED);
-  O = qqheap_buffer(qheap, sizeof(_ppname), PPNAME_INIT);
-  for (p = encoded, e = encoded + ghost1->size; p < e; ++p)
+  encoded = (ppname *)ppstruct_take(heap, sizeof(ppname));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+  if (decode)
   {
-    if (*p == '#' && p + 2 < e) {
-      v1 = base16_value(p[1]);
-      v2 = base16_value(p[2]);
-      iof_put(O, ((v1<<4)+v2));
-      p += 2;
+    O = ppbytes_buffer(heap, encoded->size);
+    for (p = encoded->data, e = p + encoded->size; p < e; ++p)
+    {
+      if (*p == '#' && p + 2 < e && (h1 = pphex(p[1])) >= 0 && (h2 = pphex(p[2])) >= 0) 
+      {
+        iof_set(O, ((h1 << 4)|h2));
+        p += 2;
+      }
+      else
+        iof_set(O, *p);
     }
-    else
-      iof_put(O, *p);
+    decoded = (ppname *)ppstruct_take(heap, sizeof(ppname));
+    decoded->data = ppbytes_flush(heap, O, &decoded->size);
+    encoded->flags = PPNAME_EXEC|PPNAME_ENCODED;
+    decoded->flags = PPNAME_EXEC|PPNAME_DECODED;
+    encoded->alterego = decoded, decoded->alterego = encoded;
   }
-  decoded = ppname_flush_with_ego(O, ghost2, size, PPNAME_EXEC|PPNAME_DECODED);
-  ppname_set_alter_ego(encoded, ghost1, decoded);
-  ppname_set_alter_ego(decoded, ghost2, encoded);
+  else
+  {
+    encoded->flags = PPNAME_EXEC;
+    encoded->alterego = encoded;
+  }
   return encoded;
 }
 
-static ppname ppexec_internal (const void *data, size_t size, qqheap *qheap)
-{ // used only for artificial 'EI' operator name
-  iof *O;
-  _ppname *ghost1;
-
-  O = qqheap_buffer(qheap, sizeof(_ppname), size);
-  iof_write(O, data, size);
-  return ppname_flush(O, ghost1, size, PPNAME_EXEC);
+static ppname * ppname_internal (const void *data, size_t size, int flags, ppheap *heap)
+{ // so far needed only for 'EI' operator
+  ppname *encoded;
+  encoded = (ppname *)ppstruct_take(heap, sizeof(ppname));
+  encoded->data = (ppbyte *)ppbytes_take(heap, size + 1);
+  memcpy(encoded->data, data, size);
+  encoded->data[size] = '\0';
+  encoded->size = size;
+  encoded->alterego = encoded;
+  encoded->flags = flags;
+  return encoded;
 }
 
-ppname ppname_decoded (ppname name)
+#define ppexec_internal(data, size, heap) ppname_internal(data, size, PPNAME_EXEC, heap)
+
+ppname * ppname_decoded (ppname *name)
 {
-  const _ppname *ghost;
-  ghost = _ppname_ghost(name);
-  return (ghost->flags & PPNAME_ENCODED) ? ppname_get_alter_ego(name) : name;
+  return (name->flags & PPNAME_ENCODED) ? name->alterego : name;
 }
 
-ppname ppname_encoded (ppname name)
+ppname * ppname_encoded (ppname *name)
 {
-  const _ppname *ghost;
-  ghost = _ppname_ghost(name);
-  return (ghost->flags & PPNAME_DECODED) ? ppname_get_alter_ego(name) : name;
+  return (name->flags & PPNAME_DECODED) ? name->alterego : name;
+}
+
+ppbyte * ppname_decoded_data (ppname *name)
+{
+  return (name->flags & PPNAME_ENCODED) ? name->alterego->data : name->data;
+}
+
+ppbyte * ppname_encoded_data (ppname *name)
+{
+  return (name->flags & PPNAME_DECODED) ? name->alterego->data : name->data;
 }
 
 /* string */
 
-#define PPSTRING_INIT (16+1)
+const char ppstring_byte_escape[] = { /* -1 escaped with octal, >0 escaped with \\, 0 left intact*/
+ -1,-1,-1,-1,-1,-1,-1,-1,'b','t','n',-1,'f','r',-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  0, 0, 0, 0, 0, 0, 0, 0,'(',')', 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'\\', 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+};
 
-#define ppstring_flush(O, ghost, siz, flgs) \
-  (iof_put(O, '\0'), \
-   ghost = (_ppstring *)qqheap_flush(O, &siz), \
-   ghost->flags = flgs, \
-   ghost->size = siz - sizeof(_ppstring) - 1, \
-  (ppstring)(ghost + 1))
+//// pp string
 
-#define ppstring_flush_with_ego(O, ghost, siz, flgs)  \
-  (iof_put(O, '\0'), \
-   iof_ensure(O, sizeof(ppstring *)),   \
-   O->pos += sizeof(ppstring *), \
-   ghost = (_ppstring *)qqheap_flush(O, &siz), \
-   ghost->flags = flgs, \
-   ghost->size = siz - sizeof(_ppstring) - 1 - sizeof(ppstring *), \
-  (ppstring)(ghost + 1))
+#define PPSTRING_INIT (7 + 1)
 
-#define ppstring_utf16be_bom(decoded) (decoded[0] == ((char)0xFE) && decoded[1] == ((char)0xFF) )
-#define ppstring_utf16le_bom(decoded) (decoded[0] == ((char)0xFF) && decoded[1] == ((char)0xFE))
+#define ppstring_check_bom(decoded) ((void)\
+  (decoded->size >= 2 ? (ppstring_utf16be_bom(decoded->data) ? (decoded->flags |= PPSTRING_UTF16BE) : \
+                        (ppstring_utf16le_bom(decoded->data) ? (decoded->flags |= PPSTRING_UTF16LE) : 0)) : 0))
 
-#define ppstring_check_bom(decoded, ghost) ((void)\
-  (ghost->size >= 2 ? (ppstring_utf16be_bom(decoded) ? (ghost->flags |= PPSTRING_UTF16BE) : \
-                      (ppstring_utf16le_bom(decoded) ? (ghost->flags |= PPSTRING_UTF16LE) : 0)) : 0))
+#define ppstring_check_bom2(decoded, encoded) ((void)\
+  (decoded->size >= 2 ? (ppstring_utf16be_bom(decoded->data) ? ((decoded->flags |= PPSTRING_UTF16BE), (encoded->flags |= PPSTRING_UTF16BE)) : \
+                        (ppstring_utf16le_bom(decoded->data) ? ((decoded->flags |= PPSTRING_UTF16LE), (encoded->flags |= PPSTRING_UTF16LE)) : 0)) : 0))
 
-#define ppstring_check_bom2(decoded, ghost1, ghost2) ((void)\
-  (ghost2->size >= 2 ? (ppstring_utf16be_bom(decoded) ? ((ghost1->flags |= PPSTRING_UTF16BE), (ghost2->flags |= PPSTRING_UTF16BE)) : \
-                       (ppstring_utf16le_bom(decoded) ? ((ghost1->flags |= PPSTRING_UTF16LE), (ghost2->flags |= PPSTRING_UTF16LE)) : 0)) : 0))
+#define ppstring_utf16be_bom(data) (data[0] == ((ppbyte)0xFE) && data[1] == ((ppbyte)0xFF))
+#define ppstring_utf16le_bom(data) (data[0] == ((ppbyte)0xFF) && data[1] == ((ppbyte)0xFE))
 
+#define ppstringesc(c) ppstring_byte_escape[(uint8_t)(c)]
 
-#define ppstring_set_alter_ego(string, ghost, ego) (*((ppstring *)((string + (ghost)->size + 1))) = ego)
-#define ppstring_get_alter_ego(string) (*((ppstring *)(string + ppstring_size(string) + 1)))
-
-static ppstring ppscan_string (iof *I, qqheap *qheap)
+static ppstring * ppscan_string (iof *I, ppheap *heap)
 {
-  int c, decode, balance;
+  ppstring *encoded, *decoded;
   iof *O;
-  _ppstring *ghost1, *ghost2;
-  uint8_t *p, *e;
-  ppstring encoded, decoded;
-  size_t size;
+  int c, decode, balance;
+  ppbyte *p, *e;
 
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
+  O = ppbytes_buffer(heap, PPSTRING_INIT);
   for (decode = 0, balance = 0, c = iof_char(I); c >= 0; )
   {
     switch (c)
     {
       case '\\':
-        decode = 1; // unescaping later
+        decode = 1;
         iof_put(O, '\\');
         if ((c = iof_next(I)) >= 0)
         {
@@ -252,184 +292,279 @@ static ppstring ppscan_string (iof *I, qqheap *qheap)
         c = iof_next(I);
     }
   }
-  if (!decode)
+  encoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+  if (decode)
   {
-    encoded = ppstring_flush(O, ghost1, size, 0);
-    ppstring_check_bom(encoded, ghost1); // any bytes can be there
-    return encoded;
-  }
-  encoded = ppstring_flush_with_ego(O, ghost1, size, 0|PPSTRING_ENCODED);
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
-  for (p = (uint8_t *)encoded, e = (uint8_t *)encoded + ghost1->size; p < e; ++p)
-  {
-    if (*p == '\\')
+    O = ppbytes_buffer(heap, encoded->size); // decoded can only be smaller
+    for (p = encoded->data, e = p + encoded->size; p < e; ++p)
     {
-      if (++p >= e)
-        break;
-      switch (*p)
+      if (*p == '\\')
       {
-        case OCTAL_CHAR_CASE:
-          c = *p - '0';
-          if (++p < e && *p >= '0' && *p <= '7')
-          {
-            c = (c << 3) + *p - '0';
+        if (++p >= e)
+          break;
+        switch (*p)
+        {
+          case OCTAL_CHAR_CASE:
+            c = *p - '0';
             if (++p < e && *p >= '0' && *p <= '7')
+            {
               c = (c << 3) + *p - '0';
-          }
-          iof_put(O, c);
-          break;
-        case 'n':
-          iof_put(O, '\n');
-          break;
-        case 'r':
-          iof_put(O, '\r');
-          break;
-        case 't':
-          iof_put(O, '\t');
-          break;
-        case 'b':
-          iof_put(O, '\b');
-          break;
-        case 'f':
-          iof_put(O, '\f');
-          break;
-        case NEWLINE_CHAR_CASE: // not a part of the string, ignore (pdf spec page 55)
-          break;
-        case '(': case ')': case '\\':
-        default: // for anything else backslash is ignored (pdf spec page 54)
-          iof_put(O, *p);
-          break;
+              if (++p < e && *p >= '0' && *p <= '7')
+                c = (c << 3) + *p - '0';
+            }
+            iof_set(O, c);
+            break;
+          case 'n':
+            iof_set(O, '\n');
+            break;
+          case 'r':
+            iof_set(O, '\r');
+            break;
+          case 't':
+            iof_set(O, '\t');
+            break;
+          case 'b':
+            iof_set(O, '\b');
+            break;
+          case 'f':
+            iof_set(O, '\f');
+            break;
+          case NEWLINE_CHAR_CASE: // not a part of the string, ignore (pdf spec page 55)
+            break;
+          case '(': case ')': case '\\':
+          default: // for anything else backslash is ignored (pdf spec page 54)
+            iof_set(O, *p);
+            break;
+        }
       }
+      else
+        iof_set(O, *p);
     }
-    else
-      iof_put(O, *p);
+    decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+    decoded->data = ppbytes_flush(heap, O, &decoded->size);
+    encoded->flags = PPSTRING_ENCODED;
+    decoded->flags = PPSTRING_DECODED;
+    encoded->alterego = decoded, decoded->alterego = encoded;
+    ppstring_check_bom2(decoded, encoded);
   }
-  decoded = ppstring_flush_with_ego(O, ghost2, size, 0|PPSTRING_DECODED);
-  ppstring_check_bom2(decoded, ghost1, ghost2);
-  ppstring_set_alter_ego(encoded, ghost1, decoded);
-  ppstring_set_alter_ego(decoded, ghost2, encoded);
+  else
+  {
+    encoded->flags = 0;
+    encoded->alterego = encoded;
+    ppstring_check_bom(encoded);
+  }
   return encoded;
 }
 
-/* Hex string may contain white characters. If odd number of digits, the last assumed to be '0' */
-
-static ppstring ppscan_base16 (iof *I, qqheap *qheap)
+static ppstring * ppscan_base16 (iof *I, ppheap *heap)
 {
-  int c, v1, v2;
+  ppstring *encoded, *decoded;
   iof *O;
-  _ppstring *ghost1, *ghost2;
-  size_t size;
-  ppstring encoded, decoded;
-  uint8_t *p, *e;
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
-  for (c = iof_char(I); c >= 0 && (base16_digit(c) || ignored_char(c)); c = iof_next(I))
+  int c;  
+  ppbyte *p, *e;
+  char h1, h2;
+
+  O = ppbytes_buffer(heap, PPSTRING_INIT);
+  for (c = iof_char(I); (pphex(c) >= 0 || ignored_char(c)); c = iof_next(I))
     iof_put(O, c);
   if (c == '>')
     ++I->pos;
-  encoded = ppstring_flush_with_ego(O, ghost1, size, PPSTRING_BASE16|PPSTRING_ENCODED);
-  O = qqheap_buffer(qheap, sizeof(_ppstring), (ghost1->size >> 1) + 1);
-  for (p = (uint8_t *)encoded, e = (uint8_t *)encoded + ghost1->size; p < e; ++p)
+  encoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+
+  O = ppbytes_buffer(heap, ((encoded->size + 1) >> 1) + 1); // decoded can only be smaller
+  for (p = encoded->data, e = p + encoded->size; p < e; ++p)
   {
-    if ((v1 = base16_value(*p)) < 0) // ignored
+    if ((h1 = pphex(*p)) < 0) // ignored
       continue;
-    for (v2 = 0, ++p; p < e && (v2 = base16_value(*p)) < 0; ++p);
-    iof_put(O, (v1<<4)|v2);
+    for (h2 = 0, ++p; p < e && (h2 = pphex(*p)) < 0; ++p);
+    iof_set(O, (h1 << 4)|h2);
   }
-  decoded = ppstring_flush_with_ego(O, ghost2, size, 0|PPSTRING_DECODED);
-  ppstring_check_bom2(decoded, ghost1, ghost2);
-  ppstring_set_alter_ego(encoded, ghost1, decoded);
-  ppstring_set_alter_ego(decoded, ghost2, encoded);
+  decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  decoded->data = ppbytes_flush(heap, O, &decoded->size);
+
+  encoded->flags = PPSTRING_BASE16|PPSTRING_ENCODED;
+  decoded->flags = PPSTRING_BASE16|PPSTRING_DECODED;
+  encoded->alterego = decoded, decoded->alterego = encoded;
+
+  ppstring_check_bom2(decoded, encoded);
   return encoded;
 }
 
-/* internal use only; binary string */
-
-static ppstring ppstring_buffer (iof *O, qqheap *qheap)
+static ppstring * ppstring_buffer (iof *O, ppheap *heap)
 {
-   _ppstring *ghost1, *ghost2;
-   ppstring encoded, decoded;
-   uint8_t *p, *e;
-   size_t size;
-   decoded = ppstring_flush_with_ego(O, ghost2, size, 0|PPSTRING_DECODED);
-   O = qqheap_buffer(qheap, sizeof(_ppstring), (ghost2->size << 1) + 1);
-   for (p = (uint8_t *)decoded, e = (uint8_t *)decoded + ghost2->size; p < e; ++p)
-     iof_set2(O, base16_uc_alphabet[(*p)>>4], base16_uc_alphabet[(*p)&15]);
-   encoded = ppstring_flush_with_ego(O, ghost1, size, PPSTRING_BASE16|PPSTRING_ENCODED);
-   ppstring_set_alter_ego(encoded, ghost1, decoded);
-   ppstring_set_alter_ego(decoded, ghost2, encoded);
-   return encoded;
+  ppstring *encoded, *decoded;
+  ppbyte *p, *e;
+
+  decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  decoded->data = ppbytes_flush(heap, O, &decoded->size);
+  
+  O = ppbytes_buffer(heap, (decoded->size << 1) + 1); // the exact size known
+  for (p = decoded->data, e = p + decoded->size; p < e; ++p)
+    iof_set2(O, base16_uc_alphabet[(*p) >> 4], base16_uc_alphabet[(*p) & 0xF]);
+  encoded = ppstruct_take(heap, sizeof(ppstring));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+  encoded->flags = PPSTRING_BASE16|PPSTRING_ENCODED;
+  decoded->flags = PPSTRING_BASE16|PPSTRING_DECODED;
+  encoded->alterego = decoded, decoded->alterego = encoded;
+  // ppstring_check_bom2(decoded, encoded); // ?
+  return encoded;
 }
 
-ppstring ppstring_internal (const void *data, size_t size, qqheap *qheap)
+ppstring * ppstring_internal (const void *data, size_t size, ppheap *heap)
 { // so far used only for crypt key
   iof *O;
-  O = qqheap_buffer(qheap, sizeof(_ppstring), size);
-  iof_write(O, data, size);
-  return ppstring_buffer(O, qheap);
+  O = ppbytes_buffer(heap, size);
+  memcpy(O->buf, data, size);
+  return ppstring_buffer(O, heap);
 }
 
-/* PDF spec says nothing about base85 strings, but streams might be (afair no leading '<~' but present trailing '~>') */
+/* base85; local function for that to make that part independent from utilbasexx */
 
-static ppstring ppscan_base85 (iof *I, qqheap *qheap)
+static const char ppstring_base85_lookup[] = {
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+  15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,
+  31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,
+  47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,
+  63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,
+  79,80,81,82,83,84,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+};
+
+#define base85_value(c) ppstring_base85_lookup[(uint8_t)(c)]
+
+#define base85_code(c1, c2, c3, c4, c5) ((((c1 * 85 + c2) * 85 + c3) * 85 + c4) * 85 + c5)
+#define base85_eof(c) (c == '~' || c < 0)
+
+static iof_status ppscan_base85_decode (iof *I, iof *O)
+{
+  int c1, c2, c3, c4, c5;
+  unsigned int code;
+  while (iof_ensure(O, 4))
+  {
+    do { c1 = iof_get(I); } while (ignored_char(c1));
+    if (base85_eof(c1))
+      return IOFEOF;
+    switch (c1)
+    {
+      case 'z':
+        iof_set4(O, '\0', '\0', '\0', '\0');
+        continue;
+      case 'y':
+        iof_set4(O, ' ', ' ', ' ', ' ');
+        continue;
+    }
+    do { c2 = iof_get(I); } while (ignored_char(c2));
+    if (base85_eof(c2))
+      return IOFERR;
+    do { c3 = iof_get(I); } while (ignored_char(c3));
+    if (base85_eof(c3))
+    {
+      if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0)
+        return IOFERR;
+      code = base85_code(c1, c2, 84, 84, 84); /* padding with 'u' (117); 117-33 = 84 */
+      iof_set(O, (code >> 24));
+      return IOFEOF;
+    }
+    do { c4 = iof_get(I); } while (ignored_char(c4));
+    if (base85_eof(c4))
+    {
+      if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 || (c3 = base85_value(c3)) < 0)
+        return IOFERR;
+      code = base85_code(c1, c2, c3, 84, 84);
+      iof_set2(O, code>>24, ((code>>16) & 0xff));
+      return IOFEOF;
+    }
+    do { c5 = iof_get(I); } while (ignored_char(c5));
+    if (base85_eof(c5))
+    {
+      if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 ||
+          (c3 = base85_value(c3)) < 0 || (c4 = base85_value(c4)) < 0)
+        return IOFERR;
+      code = base85_code(c1, c2, c3, c4, 84);
+      iof_set3(O, (code >> 24), ((code >> 16) & 0xff), ((code >> 8) & 0xff));
+      return IOFEOF;
+    }
+    if ((c1 = base85_value(c1)) < 0 || (c2 = base85_value(c2)) < 0 || (c3 = base85_value(c3)) < 0 ||
+        (c4 = base85_value(c4)) < 0 || (c5 = base85_value(c5)) < 0)
+      return IOFERR;
+    code = base85_code(c1, c2, c3, c4, c5);
+    iof_set4(O, (code >> 24), ((code >> 16) & 0xff), ((code >> 8) & 0xff), (code & 0xff));
+  }
+  return IOFFULL;
+}
+
+static ppstring * ppscan_base85 (iof *I, ppheap *heap)
 { // base85 alphabet is 33..117, adobe also hires 'z' and 'y' for compression
-  int c;
+  ppstring *encoded, *decoded;
   iof *O, B;
-  _ppstring *ghost1, *ghost2;
-  size_t size;
-  ppstring encoded, decoded;
+  int c;
   
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
+  O = ppbytes_buffer(heap, PPSTRING_INIT);
   for (c = iof_char(I); (c >= '!' && c <= 'u') || c == 'z' || c == 'y'; c = iof_next(I))
     iof_put(O, c);
   if (c == '~')
     if ((c = iof_next(I)) == '>')
       ++I->pos;
-  encoded = ppstring_flush_with_ego(O, ghost1, size, PPSTRING_BASE85|PPSTRING_ENCODED);
-  iof_string_reader(&B, encoded, ghost1->size);
-  O = qqheap_buffer(qheap, sizeof(_ppstring), (ghost1->size * 5 / 4) + 1);
-  base85_decode(&B, O);
-  decoded = ppstring_flush_with_ego(O, ghost2, size, 0|PPSTRING_DECODED);
-  ppstring_check_bom2(decoded, ghost1, ghost2);
-  ppstring_set_alter_ego(encoded, ghost1, decoded);
-  ppstring_set_alter_ego(decoded, ghost2, encoded);
+  encoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+
+  iof_string_reader(&B, encoded->data, encoded->size);
+  O = ppbytes_buffer(heap, (encoded->size * 5 / 4) + 1); // may be larger that that because of 'z' and 'y'
+  ppscan_base85_decode(&B, O);
+  decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  decoded->data = ppbytes_flush(heap, O, &decoded->size);
+
+  encoded->flags = PPSTRING_BASE85|PPSTRING_ENCODED;
+  decoded->flags = PPSTRING_BASE85|PPSTRING_DECODED;
+  encoded->alterego = decoded, decoded->alterego = encoded;
+
+  ppstring_check_bom2(decoded, encoded);
   return encoded;
 }
 
-/*
-Encrypted strings. In case of encrypted strings, we first need to decode the string (saving original form hardly makes sense),
-then decrypt the string, and encode it again.
-*/
-
-const char ppstring_byte_escape[] = { /* -1 escaped with octal, >0 escaped with \\, 0 left intact*/
- -1,-1,-1,-1,-1,-1,-1,-1,'b','t','n',-1,'f','r',-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-  0, 0, 0, 0, 0, 0, 0, 0,'(',')', 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'\\', 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
- -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
-};
-
-
-static ppstring ppscan_crypt_string (iof *I, ppcrypt *crypt, qqheap *qheap)
+ppstring * ppstring_decoded (ppstring *string)
 {
-  int c, b, balance, encode;
+  return (string->flags & PPSTRING_ENCODED) ? string->alterego : string;
+}
+
+ppstring * ppstring_encoded (ppstring *string)
+{
+  return (string->flags & PPSTRING_DECODED) ? string->alterego : string;
+}
+
+ppbyte * ppstring_decoded_data (ppstring *string)
+{
+  return (string->flags & PPSTRING_ENCODED) ? string->alterego->data : string->data;
+}
+
+ppbyte * ppstring_encoded_data (ppstring *string)
+{
+  return (string->flags & PPSTRING_DECODED) ? string->alterego->data : string->data;
+}
+
+
+/* encrypted string */
+
+static ppstring * ppscan_crypt_string (iof *I, ppcrypt *crypt, ppheap *heap)
+{
+  ppstring *encoded, *decoded;
   iof *O;
-  _ppstring *ghost1, *ghost2;
-  ppstring encoded, decoded;
-  uint8_t *p, *e;
+  int c, b, balance, encode;
+  ppbyte *p, *e;
   size_t size;
 
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
+  O = ppbytes_buffer(heap, PPSTRING_INIT);
   for (balance = 0, encode = 0, c = iof_char(I); c >= 0; )
   {
     switch (c)
@@ -505,7 +640,7 @@ static ppstring ppscan_crypt_string (iof *I, ppcrypt *crypt, qqheap *qheap)
         }
         break;
       default:
-        if (ppstring_byte_escape[c] != 0)
+        if (ppstringesc(c) != 0)
           encode = 1;
         iof_put(O, c);
         c = iof_next(I);
@@ -514,51 +649,58 @@ static ppstring ppscan_crypt_string (iof *I, ppcrypt *crypt, qqheap *qheap)
   /* decrypt the buffer in place, update size */
   if (ppstring_decrypt(crypt, O->buf, iof_size(O), O->buf, &size))
     O->pos = O->buf + size;
+  decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  decoded->data = ppbytes_flush(heap, O, &decoded->size);
   /* make encoded counterpart */
-  if (!encode)
+  if (encode)
   {
-    decoded = ppstring_flush(O, ghost2, size, 0);
-    ppstring_check_bom(decoded, ghost2);
-    return decoded;
-  }
-  decoded = ppstring_flush_with_ego(O, ghost2, size, PPSTRING_DECODED);
-  O = qqheap_buffer(qheap, sizeof(_ppstring), ghost2->size);
-  for (p = (uint8_t *)decoded, e = (uint8_t *)decoded + ghost2->size; p < e; ++p)
-  {
-    switch ((b = ppstring_byte_escape[*p]))
+    O = ppbytes_buffer(heap, decoded->size + 1); // we don't know
+    for (p = decoded->data, e = p + decoded->size; p < e; ++p)
     {
-      case 0:
-        iof_put(O, *p);
-        break;
-      case -1:
-        iof_put4(O, '\\', (c >> 6) + '0', ((c >> 3) & 7) + '0', (c & 7) + '0');
-        break;
-      default:
-        iof_put2(O, '\\', b);
-        break;
+      b = ppstringesc(*p);
+      switch (b)
+      {
+        case 0:
+          iof_put(O, *p);
+          break;
+        case -1:
+          iof_put4(O, '\\', (c >> 6) + '0', ((c >> 3) & 7) + '0', (c & 7) + '0');
+          break;
+        default:
+          iof_put2(O, '\\', b);
+          break;
+      }
     }
+    encoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+    encoded->data = ppbytes_flush(heap, O, &encoded->size);
+    encoded->flags = PPSTRING_ENCODED;
+    decoded->flags = PPSTRING_DECODED;
+    encoded->alterego = decoded, decoded->alterego = encoded;
+    ppstring_check_bom2(decoded, encoded);
   }
-  encoded = ppstring_flush_with_ego(O, ghost1, size, PPSTRING_ENCODED);
-  ppstring_check_bom2(decoded, ghost1, ghost2);
-  ppstring_set_alter_ego(encoded, ghost1, decoded);
-  ppstring_set_alter_ego(decoded, ghost2, encoded);
+  else
+  {
+    decoded->flags = 0;
+    decoded->alterego = decoded;
+    ppstring_check_bom(decoded);
+    encoded = decoded;
+  }
   return encoded;
 }
 
-static ppstring ppscan_crypt_base16 (iof *I, ppcrypt *crypt, qqheap *qheap)
+static ppstring * ppscan_crypt_base16 (iof *I, ppcrypt *crypt, ppheap *heap)
 {
-  int c, v1, v2;
+  ppstring *encoded, *decoded;
   iof *O;
-  _ppstring *ghost1, *ghost2;
-  ppstring encoded, decoded;
-  uint8_t *p, *e;
+  int c;
+  char h1, h2;
+  ppbyte *p, *e;
   size_t size;
 
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
-  // base16_decode(I, O); // no info about the last char..
-  for (c = iof_char(I); c != '>' && c >= 0; )
+  O = ppbytes_buffer(heap, PPSTRING_INIT);
+  for (c = iof_char(I); c != '>'; )
   {
-    if ((v1 = base16_value(c)) < 0)
+    if ((h1 = pphex(c)) < 0)
     {
       if (ignored_char(c))
       {
@@ -569,62 +711,51 @@ static ppstring ppscan_crypt_base16 (iof *I, ppcrypt *crypt, qqheap *qheap)
     }
     do {
       c = iof_next(I);
-      if ((v2 = base16_value(c)) >= 0)
+      if ((h2 = pphex(c)) >= 0)
       {
         c = iof_next(I);
         break;
       }
       if (!ignored_char(c)) // c == '>' || c < 0 or some crap
       {
-        v2 = 0;
+        h2 = 0;
         break;
       }
     } while (1);
-    iof_put(O, (v1 << 4)|v2);
+    iof_put(O, (h1 << 4)|h2);
   }
   if (c == '>')
     ++I->pos;
   /* decrypt the buffer in place, update size */
   if (ppstring_decrypt(crypt, O->buf, iof_size(O), O->buf, &size))
     O->pos = O->buf + size;
-  decoded = ppstring_flush_with_ego(O, ghost2, size, PPSTRING_DECODED);
-  /* recreate an encoded form */
-  O = qqheap_buffer(qheap, sizeof(_ppstring), (ghost2->size << 1) + 1);
-  for (p = (uint8_t *)decoded, e = (uint8_t *)decoded + ghost2->size; p < e; ++p)
-    iof_set2(O, base16_uc_alphabet[(*p)>>4], base16_uc_alphabet[(*p)&15]);
-  encoded = ppstring_flush_with_ego(O, ghost1, size, PPSTRING_BASE16|PPSTRING_ENCODED);
-  ppstring_check_bom2(decoded, ghost1, ghost2);
-  ppstring_set_alter_ego(encoded, ghost1, decoded);
-  ppstring_set_alter_ego(decoded, ghost2, encoded);
+  decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  decoded->data = ppbytes_flush(heap, O, &decoded->size);
+
+  O = ppbytes_buffer(heap, (decoded->size << 1) + 1);
+  for (p = decoded->data, e = p + decoded->size; p < e; ++p)
+    iof_set2(O, base16_uc_alphabet[(*p) >> 4], base16_uc_alphabet[(*p) & 0xF]);
+  encoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
+  encoded->data = ppbytes_flush(heap, O, &encoded->size);
+
+  encoded->flags = PPSTRING_BASE16|PPSTRING_ENCODED;
+  decoded->flags = PPSTRING_BASE16|PPSTRING_DECODED;
+  encoded->alterego = decoded, decoded->alterego = encoded;
+
+  ppstring_check_bom2(decoded, encoded);
   return encoded;
-}
-
-/* ppstring alter ego switcher */
-
-ppstring ppstring_decoded (ppstring string)
-{
-  const _ppstring *ghost;
-  ghost = _ppstring_ghost(string);
-  return (ghost->flags & PPSTRING_ENCODED) ? ppstring_get_alter_ego(string) : string;
-}
-
-ppstring ppstring_encoded (ppstring string)
-{
-  const _ppstring *ghost;
-  ghost = _ppstring_ghost(string);
-  return (ghost->flags & PPSTRING_DECODED) ? ppstring_get_alter_ego(string) : string;
 }
 
 /* scanner stack */
 
 #define PPSTACK_BUFFER 512
 
-static void ppstack_init (ppstack *stack, qqheap *qheap)
+static void ppstack_init (ppstack *stack, ppheap *heap)
 {
   stack->buf = stack->pos = (ppobj *)pp_malloc(PPSTACK_BUFFER * sizeof(ppobj));
   stack->size = 0;
   stack->space = PPSTACK_BUFFER;
-  stack->qheap = qheap;
+  stack->heap = heap;
 }
 
 #define ppstack_free_buffer(stack) (pp_free((stack)->buf))
@@ -734,9 +865,9 @@ static int ppscan_keyword (iof *I, const char *keyword, size_t size)
 
 /* objects parser */
 
-static ppref * ppref_unresolved (qqheap *qheap, ppuint refnumber, ppuint refversion)
+static ppref * ppref_unresolved (ppheap *heap, ppuint refnumber, ppuint refversion)
 {
-  ppref *ref = (ppref *)qqstruct_take(qheap, sizeof(ppref));
+  ppref *ref = (ppref *)ppstruct_take(heap, sizeof(ppref));
   memset(ref, 0, sizeof(ppref));
   ref->object.type = PPNONE;
   ref->number = refnumber;
@@ -774,16 +905,16 @@ static ppobj * ppscan_obj (iof *I, ppdoc *pdf, ppxref *xref)
       ++I->pos;
       obj = ppstack_push(stack);
       obj->type = PPNAME;
-      obj->name = ppscan_name(I, &pdf->qheap);
+      obj->name = ppscan_name(I, &pdf->heap);
       return obj;
     case '(':
       ++I->pos;
       obj = ppstack_push(stack);
       obj->type = PPSTRING;
       if (ppcrypt_ref(pdf, crypt))
-        obj->string = ppscan_crypt_string(I, crypt, &pdf->qheap);
+        obj->string = ppscan_crypt_string(I, crypt, &pdf->heap);
       else
-        obj->string = ppscan_string(I, &pdf->qheap);
+        obj->string = ppscan_string(I, &pdf->heap);
       return obj;
     case '[':
       mark = stack->size;
@@ -804,7 +935,7 @@ static ppobj * ppscan_obj (iof *I, ppdoc *pdf, ppxref *xref)
       size = stack->size - mark - 1;
       obj = ppstack_at(stack, mark); // stack might have been realocated
       obj->type = PPARRAY;
-      obj->array = pparray_create(ppstack_at(stack, mark + 1), size, &pdf->qheap);
+      obj->array = pparray_create(ppstack_at(stack, mark + 1), size, &pdf->heap);
       ppstack_pop(stack, size); // pop array items, leave the array on top
       return obj;
     case '<':
@@ -829,16 +960,16 @@ static ppobj * ppscan_obj (iof *I, ppdoc *pdf, ppxref *xref)
         size = stack->size - mark - 1;
         obj = ppstack_at(stack, mark);
         obj->type = PPDICT;
-        obj->dict = ppdict_create(ppstack_at(stack, mark + 1), size, &pdf->qheap);
+        obj->dict = ppdict_create(ppstack_at(stack, mark + 1), size, &pdf->heap);
         ppstack_pop(stack, size);
         return obj;
       }
       obj = ppstack_push(stack);
       obj->type = PPSTRING;
       if (ppcrypt_ref(pdf, crypt))
-        obj->string = ppscan_crypt_base16(I, crypt, &pdf->qheap);
+        obj->string = ppscan_crypt_base16(I, crypt, &pdf->heap);
       else
-        obj->string = ppscan_base16(I, &pdf->qheap);
+        obj->string = ppscan_base16(I, &pdf->heap);
       return obj;
     case 'R':
       if (stack->size >= 2 && stack->pos[-1].type == PPINT && stack->pos[-2].type == PPINT)
@@ -853,7 +984,7 @@ static ppobj * ppscan_obj (iof *I, ppdoc *pdf, ppxref *xref)
           refversion = (obj + 1)->integer;
           //if (xref != NULL)
           //  loggerf("unresolved reference %s", ppref_str(refnumber, refversion));
-          ref = ppref_unresolved(stack->qheap, refnumber, refversion);
+          ref = ppref_unresolved(stack->heap, refnumber, refversion);
         }
         obj->type = PPREF;
         obj->ref = ref;
@@ -901,14 +1032,15 @@ and scientific numbers notation. It takes ppstack * as context (no ppdoc *) to b
 to run contents parser beyond the scope of ppdoc heap.
 */
 
-static ppstring ppstring_inline (iof *I, ppdict *imagedict, qqheap *qheap);
+static ppstring * ppstring_inline (iof *I, ppdict *imagedict, ppheap *heap);
 
 static ppobj * ppscan_psobj (iof *I, ppstack *stack)
 {
   int c;
   ppobj *obj, *op;
   size_t size, mark;
-  ppname exec;
+  ppname *exec;
+  ppbyte *data;
 
   c = iof_char(I);
   switch (c)
@@ -925,7 +1057,7 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
         return ppscan_numobj_frac(I, ppstack_push(stack), 0);
       obj = ppstack_push(stack);
       obj->type = PPNAME;
-      obj->name = ppscan_exec(I, stack->qheap, '+');
+      obj->name = ppscan_exec(I, stack->heap, '+');
       return obj;
     case '-':
       c = iof_next(I);
@@ -935,19 +1067,19 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
         return ppscan_numobj_frac(I, ppstack_push(stack), 1);
       obj = ppstack_push(stack);
       obj->type = PPNAME;
-      obj->name = ppscan_exec(I, stack->qheap, '-');
+      obj->name = ppscan_exec(I, stack->heap, '-');
       return obj;
     case '/':
       ++I->pos;
       obj = ppstack_push(stack);
       obj->type = PPNAME;
-      obj->name = ppscan_name(I, stack->qheap);
+      obj->name = ppscan_name(I, stack->heap);
       return obj;
     case '(':
       ++I->pos;
       obj = ppstack_push(stack);
       obj->type = PPSTRING;
-      obj->string = ppscan_string(I, stack->qheap);
+      obj->string = ppscan_string(I, stack->heap);
       return obj;
     case '[':
       mark = stack->size;
@@ -968,7 +1100,7 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
       size = stack->size - mark - 1;
       obj = ppstack_at(stack, mark);
       obj->type = PPARRAY;
-      obj->array = pparray_create(ppstack_at(stack, mark + 1), size, stack->qheap);
+      obj->array = pparray_create(ppstack_at(stack, mark + 1), size, stack->heap);
       ppstack_pop(stack, size);
       return obj;
     case '<':
@@ -993,29 +1125,30 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
         size = stack->size - mark - 1;
         obj = ppstack_at(stack, mark);
         obj->type = PPDICT;
-        obj->dict = ppdict_create(ppstack_at(stack, mark + 1), size, stack->qheap);
+        obj->dict = ppdict_create(ppstack_at(stack, mark + 1), size, stack->heap);
         ppstack_pop(stack, size);
         return obj;
       }
       obj = ppstack_push(stack);
       obj->type = PPSTRING;
       if (c == '~')
-        ++I->pos, obj->string = ppscan_base85(I, stack->qheap);
+        ++I->pos, obj->string = ppscan_base85(I, stack->heap);
       else
-        obj->string = ppscan_base16(I, stack->qheap);
+        obj->string = ppscan_base16(I, stack->heap);
       return obj;
     default:
-      if (c < 0 || !ppname_byte_lookup[c])
+      if (!ppnamebyte(c))
         break; // forbid empty names; dead loop otherwise
       ++I->pos;
       /* true false null practically don't occur in streams so it makes sense to assume that we get an operator name here.
          If it happen to be a keyword we could give back those several bytes to the heap but.. heap buffer is tricky enough. */
-      exec = ppscan_exec(I, stack->qheap, c);
+      exec = ppscan_exec(I, stack->heap, c);
+      data = exec->data;
       obj = ppstack_push(stack);
-      switch (exec[0])
+      switch (data[0])
       {
         case 't':
-          if (exec[1] == 'r' && exec[2] == 'u' && exec[3] == 'e' && exec[4] == '\0')
+          if (data[1] == 'r' && data[2] == 'u' && data[3] == 'e' && data[4] == '\0')
           {
             obj->type = PPBOOL;
             obj->integer = 1;
@@ -1024,7 +1157,7 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
           }
           break;
         case 'f':
-          if (exec[1] == 'a' && exec[2] == 'l' && exec[3] == 's' && exec[4] == 'e' && exec[5] == '\0')
+          if (data[1] == 'a' && data[2] == 'l' && data[3] == 's' && data[4] == 'e' && data[5] == '\0')
           {
             obj->type = PPBOOL;
             obj->integer = 0;
@@ -1033,7 +1166,7 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
           }
           break;
         case 'n':
-          if (exec[1] == 'u' && exec[2] == 'l' && exec[3] == 'l' && exec[4] == '\0')
+          if (data[1] == 'u' && data[2] == 'l' && data[3] == 'l' && data[4] == '\0')
           {
             obj->type = PPNULL;
             obj->any = NULL;
@@ -1050,9 +1183,10 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
            We treat the image as a single syntactic token; BI starts collecting a dict, ID is the beginning of the data. Effectively EI
            operator obtains two operands - dict and string. It is ok to put three items onto the stack, callers dont't assume there is just one.
            */
-          if (exec[1] == 'I' && exec[2] == '\0')
+          if (data[1] == 'I' && data[2] == '\0')
           {
             ppdict *imagedict;
+            ppname *name;
             /* key val pairs -> dict */
             mark = stack->size - 1;
             obj->type = PPMARK;
@@ -1065,32 +1199,37 @@ static ppobj * ppscan_psobj (iof *I, ppstack *stack)
                 ppstack_pop(stack, size);
                 return NULL;
               }
-              if (op->type == PPNAME && ppname_exec(op->name))
+              if (op->type == PPNAME)
               {
-                if (!ppname_is(op->name, "ID"))
-                { // weird
-                  size = stack->size - mark;
-                  ppstack_pop(stack, size);
-                  return NULL;
+                name = op->name;
+                if (name->flags & PPNAME_EXEC)
+                {
+                  if (name->size != 2 || name->data[0] != 'I' || name->data[1] != 'D')
+                  { // weird
+                    size = stack->size - mark;
+                    ppstack_pop(stack, size);
+                    return NULL;
+                  }
+                  break;
                 }
-                break;
               }
             }
             size = stack->size - mark - 1;
             obj = ppstack_at(stack, mark);
             obj->type = PPDICT;
-            obj->dict = imagedict = ppdict_create(ppstack_at(stack, mark + 1), size, stack->qheap);
+            obj->dict = imagedict = ppdict_create(ppstack_at(stack, mark + 1), size, stack->heap);
             ppstack_pop(stack, size);
             /* put image data string */
             obj = ppstack_push(stack);
             obj->type = PPSTRING;
-            obj->string = ppstring_inline(I, imagedict, stack->qheap);;
+            obj->string = ppstring_inline(I, imagedict, stack->heap);;
             /* put EI operator name */
             obj = ppstack_push(stack);
             obj->type = PPNAME;
-            obj->name = ppexec_internal("EI", 2, stack->qheap);
+            obj->name = ppexec_internal("EI", 2, stack->heap);
             return obj;
           }
+          break;
       }
       obj->type = PPNAME;
       obj->name = exec;
@@ -1110,7 +1249,7 @@ Revision 20190327: inline images may be compressed, in which case we can't predi
 static size_t inline_image_length (ppdict *dict)
 {
   ppuint w, h, bpc, colors;
-  ppname cs;
+  ppname *cs;
 
   if (ppdict_get_name(dict, "F") == NULL)
   {
@@ -1130,13 +1269,12 @@ static size_t inline_image_length (ppdict *dict)
   return PP_LENGTH_UNKNOWN;
 }
 
-static ppstring ppstring_inline (iof *I, ppdict *imagedict, qqheap *qheap)
+static ppstring * ppstring_inline (iof *I, ppdict *imagedict, ppheap *heap)
 {
   iof *O;
   int c, d, e;
   size_t length, leftin, leftout, bytes;
 
-  O = qqheap_buffer(qheap, sizeof(_ppstring), PPSTRING_INIT);
   c = iof_char(I);
   if (ignored_char(c))
     c = iof_next(I);
@@ -1144,6 +1282,7 @@ static ppstring ppstring_inline (iof *I, ppdict *imagedict, qqheap *qheap)
   length = inline_image_length(imagedict);
   if (length != PP_LENGTH_UNKNOWN)
   {
+    O = ppbytes_buffer(heap, length);
     while (length > 0 && iof_readable(I) && iof_writable(O))
     {
       leftin = iof_left(I);
@@ -1163,6 +1302,7 @@ static ppstring ppstring_inline (iof *I, ppdict *imagedict, qqheap *qheap)
   }
   else
   {
+    O = ppbytes_buffer(heap, PPSTRING_INIT); // ?
     while (c >= 0)
     {
       if (c == 'E')
@@ -1171,7 +1311,7 @@ static ppstring ppstring_inline (iof *I, ppdict *imagedict, qqheap *qheap)
         if (d == 'I')
         {
           e = iof_next(I);
-          if (!ppname_byte_lookup[e])
+          if (!ppnamebyte(e))
           { /* strip one newline from the end and stop */
             if (O->pos - 2 >= O->buf) // sanity
             {
@@ -1202,7 +1342,7 @@ static ppstring ppstring_inline (iof *I, ppdict *imagedict, qqheap *qheap)
       }
     }
   }
-  return ppstring_buffer(O, qheap);
+  return ppstring_buffer(O, heap);
 }
 
 /* input reader */
@@ -1233,7 +1373,7 @@ static void ppdoc_reader_init (ppdoc *pdf, iof_file *input)
   }
   else
   {
-    pdf->buffer = (uint8_t *)qqbytes_take(&pdf->qheap, PPDOC_BUFFER);
+    pdf->buffer = (uint8_t *)ppbytes_take(&pdf->heap, PPDOC_BUFFER);
     iof_setup_file_handle_reader(I, NULL, 0, iof_file_get_fh(input)); // gets IOF_FILE_HANDLE flag and FILE *
     I->space = PPDOC_BUFFER; // used on refill
   }
@@ -1434,6 +1574,7 @@ static ppxref * ppxref_load_table (iof *I, ppdoc *pdf, size_t xrefoffset)
   buffer[xref_item_length] = '\0';
   xref = ppxref_create(pdf, 0, xrefoffset);
   if (pdf->xref == NULL) pdf->xref = xref;
+
   for (ppscan_find(I); ppscan_uint(I, &first); ppscan_find(I))
   {
     ppscan_find(I);
@@ -1443,7 +1584,7 @@ static ppxref * ppxref_load_table (iof *I, ppdoc *pdf, size_t xrefoffset)
       continue;
     xref->count += count;
     xrefsection = NULL;
-    ref = (ppref *)qqstruct_take(&pdf->qheap, count * sizeof(ppref));
+    ref = (ppref *)ppstruct_take(&pdf->heap, count * sizeof(ppref));
     for (refindex = 0; refindex < count; ++refindex, ++ref)
     {
       ref->xref = xref;
@@ -1455,7 +1596,7 @@ static ppxref * ppxref_load_table (iof *I, ppdoc *pdf, size_t xrefoffset)
         case 'n':
           if (xrefsection == NULL)
           {
-            xrefsection = ppxref_push_section(xref, &pdf->qheap);
+            xrefsection = ppxref_push_section(xref, &pdf->heap);
             xrefsection->first = ref->number;
             xrefsection->refs = ref;
           }
@@ -1576,7 +1717,7 @@ static ppxref * ppxref_load_stream (iof *I, ppdoc *pdf, size_t xrefoffset)
       continue;
     xref->count += count;
     xrefsection = NULL;
-    ref = (ppref *)qqstruct_take(&pdf->qheap, count * sizeof(ppref));
+    ref = (ppref *)ppstruct_take(&pdf->heap, count * sizeof(ppref));
     for (refindex = 0; refindex < count; ++refindex, ++ref)
     {
       ref->xref = xref;
@@ -1600,7 +1741,7 @@ static ppxref * ppxref_load_stream (iof *I, ppdoc *pdf, size_t xrefoffset)
         case 1:
           if (xrefsection == NULL)
           {
-            xrefsection = ppxref_push_section(xref, &pdf->qheap);
+            xrefsection = ppxref_push_section(xref, &pdf->heap);
             xrefsection->first = ref->number;
             xrefsection->refs = ref;
           }
@@ -1614,7 +1755,7 @@ static ppxref * ppxref_load_stream (iof *I, ppdoc *pdf, size_t xrefoffset)
         case 2:
           if (xrefsection == NULL)
           {
-            xrefsection = ppxref_push_section(xref, &pdf->qheap);
+            xrefsection = ppxref_push_section(xref, &pdf->heap);
             xrefsection->first = ref->number;
             xrefsection->refs = ref;
           }
@@ -1676,6 +1817,7 @@ static ppxref * ppxref_load_chain (ppdoc *pdf, ppxref *xref)
 static ppxref * ppxref_load (ppdoc *pdf, size_t xrefoffset)
 {
   iof *I;
+
   if ((I = ppdoc_reader(pdf, xrefoffset, PP_LENGTH_UNKNOWN)) == NULL)
     return NULL;
   ppscan_find(I);
@@ -1714,7 +1856,7 @@ static void fix_trailer_references (ppdoc *pdf)
 {
   ppxref *xref;
   ppdict *trailer;
-  ppname *pkey;
+  ppname **pkey;
   ppobj *obj;
   ppref *ref;
   for (xref = pdf->xref; xref != NULL; xref = xref->prev)
@@ -1774,7 +1916,7 @@ static void ppdoc_load_entries (ppdoc *pdf)
   ppxref *xref;
   ppxsec *xsec;
   ppobj *obj;
-  ppname type;
+  ppname *type;
   ppcrypt *crypt;
   ppstream *stream;
 
@@ -1863,7 +2005,7 @@ static void ppdoc_load_entries (ppdoc *pdf)
          ppstream_info(stream, pdf);
        }
        if (!ppdoc_load_objstm(stream, pdf, ref->xref))
-        loggerf("invalid objects stream %s at offset " PPSIZEF, ppref_str(ref->number, ref->version), ref->offset);
+         loggerf("invalid objects stream %s at offset " PPSIZEF, ppref_str(ref->number, ref->version), ref->offset);
 
     }
   }
@@ -2083,12 +2225,13 @@ static void ppdoc_pages_init (ppdoc *pdf);
 static ppdoc * ppdoc_create (iof_file *input)
 {
   ppdoc *pdf;
-  qqheap qheap;
+  ppheap heap;
 
-  qqheap_init(&qheap);
-  pdf = (ppdoc *)qqstruct_take(&qheap, sizeof(ppdoc));
-  pdf->qheap = qheap;
-  ppstack_init(&pdf->stack, &pdf->qheap);
+  ppheap_init(&heap);
+  pdf = (ppdoc *)ppstruct_take(&heap, sizeof(ppdoc));
+  pdf->heap = heap;
+  ppbytes_buffer_init(&pdf->heap); // init with final location, not local heap variable!
+  ppstack_init(&pdf->stack, &pdf->heap);
   ppdoc_reader_init(pdf, input);
   ppdoc_pages_init(pdf);
   pdf->xref = NULL;
@@ -2126,7 +2269,7 @@ void ppdoc_free (ppdoc *pdf)
   //iof_file_free(&pdf->input);
   iof_file_decref(&pdf->input);
   ppstack_free_buffer(&pdf->stack);  
-  qqheap_free(&pdf->qheap); // last, invalidates pdf!
+  ppheap_free(&pdf->heap); // last, invalidates pdf!
 }
 
 ppcrypt_status ppdoc_crypt_status (ppdoc *pdf)
@@ -2141,16 +2284,16 @@ ppint ppdoc_permissions (ppdoc *pdf)
 
 /* pages access */
 
-static pparray * pppage_node (ppdict *dict, ppuint *count, ppname *type)
+static pparray * pppage_node (ppdict *dict, ppuint *count, ppname **type)
 {
-  ppname *pkey, key;
+  ppname **pkey, *key;
   ppobj *obj;
   pparray *kids = NULL;
   *count = 0;
   *type = NULL;
   for (ppdict_first(dict, pkey, obj); (key = *pkey) != NULL; ppdict_next(pkey, obj))
   {
-    switch (key[0])
+    switch (key->data[0])
     {
       case 'T':
         if (ppname_is(key, "Type"))
@@ -2174,7 +2317,7 @@ static pparray * pppage_node (ppdict *dict, ppuint *count, ppname *type)
 ppuint ppdoc_page_count (ppdoc *pdf)
 {
   ppref *ref;
-  ppname type;
+  ppname *type;
   ppuint count;
   if ((ref = ppxref_pages(pdf->xref)) == NULL)
     return 0;
@@ -2191,8 +2334,7 @@ ppref * ppdoc_page (ppdoc *pdf, ppuint index)
   size_t size, i;
   ppobj *r, *o;
   ppref *ref;
-  ppname type;
-
+  ppname *type;
 
   if ((ref = ppxref_pages(pdf->xref)) == NULL)
     return NULL;
@@ -2282,7 +2424,7 @@ static ppkids * pppages_push (ppdoc *pdf, pparray *kids)
   if (pages->depth == pages->space)
   {
     pages->space <<= 1;
-    newroot = (ppkids *)qqstruct_take(&pdf->qheap, pages->space * sizeof(ppkids));
+    newroot = (ppkids *)ppstruct_take(&pdf->heap, pages->space * sizeof(ppkids));
     memcpy(newroot, pages->root, pages->depth * sizeof(ppkids));
     pages->root = newroot;
   }
@@ -2299,7 +2441,7 @@ static ppref * ppdoc_pages_group_first (ppdoc *pdf, ppref *ref)
   ppdict *dict;
   pparray *kids;
   ppuint count;
-  ppname type;
+  ppname *type;
 
   dict = ref->object.dict; // typecheck made by callers
   while ((kids = pppage_node(dict, &count, &type)) != NULL)
@@ -2358,21 +2500,22 @@ ppcontext * ppcontext_new (void)
 {
   ppcontext *context;
   context = (ppcontext *)pp_malloc(sizeof(ppcontext)); // better not from its own heap, for simpler renew
-  qqheap_init(&context->qheap);
-  ppstack_init(&context->stack, &context->qheap);
+  ppheap_init(&context->heap);
+  ppbytes_buffer_init(&context->heap);
+  ppstack_init(&context->stack, &context->heap);
   return context;
 }
 
 void ppcontext_done (ppcontext *context)
 {
-  qqheap_renew(&context->qheap);
+  ppheap_renew(&context->heap);
   ppstack_clear(&context->stack);
 }
 
 void ppcontext_free (ppcontext *context)
 {
   ppstack_free_buffer(&context->stack);
-  qqheap_free(&context->qheap);
+  ppheap_free(&context->heap);
   pp_free(context);
 }
 
@@ -2437,7 +2580,7 @@ ppstream * ppcontents_next (ppdict *dict, ppstream *stream)
   return NULL;
 }
 
-static ppobj * ppcontents_op (iof *I, ppstack *stack, size_t *psize, ppname *pname)
+static ppobj * ppcontents_op (iof *I, ppstack *stack, size_t *psize, ppname **pname)
 {
   ppobj *obj;
   ppstack_clear(stack);
@@ -2452,7 +2595,7 @@ static ppobj * ppcontents_op (iof *I, ppstack *stack, size_t *psize, ppname *pna
   return stack->buf;
 }
 
-ppobj * ppcontents_first_op (ppcontext *context, ppstream *stream, size_t *psize, ppname *pname)
+ppobj * ppcontents_first_op (ppcontext *context, ppstream *stream, size_t *psize, ppname **pname)
 {
   iof *I;
   if ((I = ppstream_read(stream, 1, 0)) == NULL)
@@ -2460,7 +2603,7 @@ ppobj * ppcontents_first_op (ppcontext *context, ppstream *stream, size_t *psize
   return ppcontents_op(I, &context->stack, psize, pname);
 }
 
-ppobj * ppcontents_next_op (ppcontext *context, ppstream *stream, size_t *psize, ppname *pname)
+ppobj * ppcontents_next_op (ppcontext *context, ppstream *stream, size_t *psize, ppname **pname)
 {
   return ppcontents_op(ppstream_iof(stream), &context->stack, psize, pname);
 }
@@ -2590,8 +2733,8 @@ size_t ppdoc_memory (ppdoc *pdf, size_t *waste)
 {
 	mem_info info;
   size_t used;
-  qqbytes_heap_info(&pdf->qheap.bytesheap, &info, 0);
-  qqstruct_heap_info(&pdf->qheap.structheap, &info, 1);
+  ppbytes_heap_info(&pdf->heap, &info, 0);
+  ppstruct_heap_info(&pdf->heap, &info, 1);
 
   // after show_mem_info();
   *waste = info.ghosts + info.blockghosts + info.left; // info.ghosts == 0

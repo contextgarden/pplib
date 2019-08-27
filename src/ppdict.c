@@ -1,17 +1,19 @@
 
 #include "pplib.h"
 
-ppdict * ppdict_create (const ppobj *stackpos, size_t size, qqheap *qheap)
+ppdict * ppdict_create (const ppobj *stackpos, size_t size, ppheap *heap)
 {
   ppdict *dict;
   ppobj *data;
-  ppname *pkey;
+  ppname **pkey;
   size_t i;
-  size >>= 1;
-  dict = (ppdict *)qqstruct_take(qheap, sizeof(ppdict) + size * sizeof(ppobj) + (size + 1) * sizeof(ppname *)); // ? + size * sizeof(ppdict_map_node)
-  dict->size = 0;
-  dict->data = data = (ppobj *)(dict + 1);
-  dict->keys = pkey = (ppname *)(dict->data + size);
+
+  size >>= 1; // num of key-value pairs
+  dict = (ppdict *)ppstruct_take(heap, sizeof(ppdict));
+  dict->data = data = (ppobj *)ppstruct_take(heap, size * sizeof(ppobj));
+  dict->keys = pkey = (ppname **)ppstruct_take(heap, (size + 1) * sizeof(ppname **));
+	dict->size = 0;
+
   for (i = 0; i < size; ++i, stackpos += 2)
   {
     if (stackpos->type != PPNAME) // we need this check at lest for trailer hack
@@ -25,11 +27,12 @@ ppdict * ppdict_create (const ppobj *stackpos, size_t size, qqheap *qheap)
 }
 
 ppobj * ppdict_get_obj (ppdict *dict, const char *name)
-{ // some lookup? will see
-  ppname *pkey;
+{
+  ppname **pkey;
   ppobj *obj;
+
   for (ppdict_first(dict, pkey, obj); *pkey != NULL; ppdict_next(pkey, obj))
-    if (strcmp(*pkey, name) == 0) // not ppname_eq() or ppname_is()!!
+    if (strcmp((*pkey)->data, name) == 0) // not ppname_eq() or ppname_is()!!
       return obj;
   return NULL;
 }
@@ -88,25 +91,25 @@ int ppdict_rget_num (ppdict *dict, const char *name, ppnum *v)
   return (obj = ppdict_get_obj(dict, name)) != NULL ? ppobj_rget_num(obj, *v) : 0;
 }
 
-ppname ppdict_get_name (ppdict *dict, const char *name)
+ppname * ppdict_get_name (ppdict *dict, const char *name)
 {
   ppobj *obj;
   return (obj = ppdict_get_obj(dict, name)) != NULL ? ppobj_get_name(obj) : NULL;
 }
 
-ppname ppdict_rget_name (ppdict *dict, const char *name)
+ppname * ppdict_rget_name (ppdict *dict, const char *name)
 {
   ppobj *obj;
   return (obj = ppdict_get_obj(dict, name)) != NULL ? ppobj_rget_name(obj) : NULL;
 }
 
-ppstring ppdict_get_string (ppdict *dict, const char *name)
+ppstring * ppdict_get_string (ppdict *dict, const char *name)
 {
   ppobj *obj;
   return (obj = ppdict_get_obj(dict, name)) != NULL ? ppobj_get_string(obj) : NULL;
 }
 
-ppstring ppdict_rget_string (ppdict *dict, const char *name)
+ppstring * ppdict_rget_string (ppdict *dict, const char *name)
 {
   ppobj *obj;
   return (obj = ppdict_get_obj(dict, name)) != NULL ? ppobj_rget_string(obj) : NULL;

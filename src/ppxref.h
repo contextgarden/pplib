@@ -28,7 +28,7 @@ struct ppxref {
 };
 
 ppxref * ppxref_create (ppdoc *pdf, size_t initsize, size_t xrefoffset);
-ppxsec * ppxref_push_section (ppxref *xref, qqheap *qheap);
+ppxsec * ppxref_push_section (ppxref *xref, ppheap *heap);
 int ppxref_sort (ppxref *xref);
 ppref * ppxref_find_local (ppxref *xref, ppuint refnumber);
 

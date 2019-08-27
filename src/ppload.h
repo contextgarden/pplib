@@ -7,7 +7,7 @@ typedef struct {
   ppobj *pos;     // current ppobj *
   size_t size;    // stack size
   size_t space;   // available space
-  qqheap *qheap;  // allocator (parent pdf->stack->qheap or parent context)
+  ppheap *heap;  // allocator (parent pdf->stack->heap or parent context)
 } ppstack;
 
 typedef struct {
@@ -32,7 +32,7 @@ struct ppdoc {
   uint8_t *buffer;
   size_t filesize;
   /* heap */
-  qqheap qheap;
+  ppheap heap;
   ppstack stack;
   /* output struct */
   ppxref *xref;
@@ -47,10 +47,11 @@ struct ppdoc {
 
 ppobj * ppdoc_load_entry (ppdoc *pdf, ppref *ref);
 #define ppobj_preloaded(pdf, obj) ((obj)->type != PPREF ? (obj) : ((obj)->ref->object.type == PPNONE ? ppdoc_load_entry(pdf, (obj)->ref) : &(obj)->ref->object))
-ppstring ppstring_internal (const void *data, size_t size, qqheap *qheap);
+
+ppstring * ppstring_internal (const void *data, size_t size, ppheap *heap);
 
 struct ppcontext {
-  qqheap qheap;
+  ppheap heap;
   ppstack stack;
 };
 

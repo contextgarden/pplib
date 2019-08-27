@@ -5,7 +5,7 @@
 ppstream * ppstream_create (ppdoc *pdf, ppdict *dict, size_t offset)
 {
   ppstream *stream;
-  stream = (ppstream *)qqstruct_take(&pdf->qheap, sizeof(ppstream));
+  stream = (ppstream *)ppstruct_take(&pdf->heap, sizeof(ppstream));
   stream->dict = dict;
   stream->offset = offset;
   //if (!ppdict_rget_uint(dict, "Length", &stream->length)) // may be indirect pointing PPNONE at this moment
@@ -42,7 +42,7 @@ static iof * ppstream_decoder (ppstream *stream, ppstreamtp filtertype, ppdict *
   int flags;
   iof *F, *P;
   ppint earlychange;
-  ppstring cryptkey;
+  ppstring *cryptkey;
 
   switch (filtertype)
   {
@@ -85,9 +85,9 @@ static iof * ppstream_decoder (ppstream *stream, ppstreamtp filtertype, ppdict *
       if ((cryptkey = stream->cryptkey) == NULL)
         return N; // /Identity crypt
       if (stream->flags & PPSTREAM_ENCRYPTED_AES)
-        return iof_filter_aes_decoder(N, cryptkey, ppstring_size(cryptkey));
+        return iof_filter_aes_decoder(N, cryptkey->data, cryptkey->size);
       if (stream->flags & PPSTREAM_ENCRYPTED_RC4)
-        return iof_filter_rc4_decoder(N, cryptkey, ppstring_size(cryptkey));
+        return iof_filter_rc4_decoder(N, cryptkey->data, cryptkey->size);
       return NULL; // if neither AES or RC4 but cryptkey present, something went wrong; see ppstream_info()
     case PPSTREAM_CCITT:
     case PPSTREAM_DCT:
@@ -101,7 +101,7 @@ static iof * ppstream_decoder (ppstream *stream, ppstreamtp filtertype, ppdict *
 #define ppstream_source(stream) iof_filter_stream_coreader((iof_file *)((stream)->input), (size_t)((stream)->offset), (size_t)((stream)->length))
 #define ppstream_auxsource(filename) iof_filter_file_reader(filename)
 
-static ppname ppstream_get_filter_name (ppobj *filterobj, size_t index)
+static ppname * ppstream_get_filter_name (ppobj *filterobj, size_t index)
 {
   if (filterobj->type == PPNAME)
     return index == 0 ? filterobj->name : NULL;
@@ -268,9 +268,9 @@ const char * ppstream_filter_name[] = {
   "Crypt"
 };
 
-int ppstream_filter_type (ppname name, ppstreamtp *filtertype)
+int ppstream_filter_type (ppname *name, ppstreamtp *filtertype)
 {
-  switch (name[0])
+  switch (name->data[0])
   {
     case 'A':
       if (ppname_is(name, "ASCIIHexDecode")) { *filtertype = PPSTREAM_BASE16; return 1; }
@@ -304,7 +304,7 @@ void ppstream_info (ppstream *stream, ppdoc *pdf)
 { // called in ppdoc_load_entries() for every stream, but after loading non-stream objects (eg. /Length..)
   ppdict *dict, *fparams;
   ppobj *fobj, *pobj;
-  ppname fname, tname, owncryptfilter = NULL;
+  ppname *fname, *tname, *owncryptfilter = NULL;
   ppcrypt *crypt;
   ppref *ref;
   size_t i;
@@ -342,10 +342,10 @@ void ppstream_info (ppstream *stream, ppdoc *pdf)
     }
     if (farraysize > 0)
     {
-      filtertypes = (ppstreamtp *)qqstruct_take(&pdf->qheap, farraysize * sizeof(ppstreamtp));
+      filtertypes = (ppstreamtp *)ppstruct_take(&pdf->heap, farraysize * sizeof(ppstreamtp));
       if ((pobj = ppdict_rget_obj(dict, paramskey)) != NULL)
       { 
-        filterparams = (ppdict **)qqstruct_take(&pdf->qheap, farraysize * sizeof(ppdict *));
+        filterparams = (ppdict **)ppstruct_take(&pdf->heap, farraysize * sizeof(ppdict *));
       }
       for (i = 0; i < farraysize; ++i)
       {
@@ -426,7 +426,7 @@ void ppstream_info (ppstream *stream, ppdoc *pdf)
 
   /* finally, if the stream is encrypted with non-identity crypt (implicit or explicit), make and save the crypt key */
   if (stream->flags & PPSTREAM_ENCRYPTED)
-    stream->cryptkey = ppcrypt_stmkey(crypt, ref, ((stream->flags & PPSTREAM_ENCRYPTED_AES) != 0), &pdf->qheap);
+    stream->cryptkey = ppcrypt_stmkey(crypt, ref, ((stream->flags & PPSTREAM_ENCRYPTED_AES) != 0), &pdf->heap);
 }
 
 void ppstream_filter_info (ppstream *stream, ppstream_filter *info, int decode)
