@@ -46,8 +46,8 @@ static void print_info (ppdoc *pdf)
   printf("  version: %s\n", ppdoc_version_string(pdf));
   printf("  protection: %s\n", crypt_info(pdf));
   printf("  filesize: %s\n", sizenum(ppdoc_file_size(pdf)));
-  printf("  objects: " PPUINTF "\n", ppdoc_objects(pdf));
-  printf("  pagecount: " PPUINTF "\n", ppdoc_page_count(pdf));
+  printf("  objects: %lu\n", (unsigned long)ppdoc_objects(pdf));
+  printf("  pagecount: %lu\n", (unsigned long)ppdoc_page_count(pdf));
   memused = ppdoc_memory(pdf, &memwaste);
   printf("  memused: %s\n", sizenum(memused));
   printf("  memwaste: %s\n", sizenum(memwaste));

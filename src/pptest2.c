@@ -122,10 +122,10 @@ int main (int argc, const char **argv)
              obj != NULL;
              obj = ppcontents_next_op(context, stream, &size, &op))
           ++operators;
-        fprintf(fh, "%%%% OPERATORS count " PPSIZEF "\n", operators);
+        fprintf(fh, "%%%% OPERATORS count %lu\n", (unsigned long)operators);
         ppstream_done(stream);
         //obj = ppcontents_parse(context, stream, &size);
-        //fprintf(fh, "%%%% items count " PPSIZEF "\n", size);
+        //fprintf(fh, "%%%% items count %lu\n", (unsigned long)size);
         fprintf(fh, "\n");
       }
       ppcontext_done(context);
