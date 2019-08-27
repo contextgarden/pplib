@@ -56,12 +56,12 @@
 #endif
 #define pile_has_free64(pile) (pile->freeghost != NULL)
 
-#define pile_get_free8(pile) ((ghost8 *)(block_top(pile) + pile->freeoffset))
-#define pile_get_free16(pile) ((ghost16 *)(block_top(pile) + pile->freeoffset))
+#define pile_get_free8(pile) ((ghost8 *)void_data(block_top(pile) + pile->freeoffset))
+#define pile_get_free16(pile) ((ghost16 *)void_data(block_top(pile) + pile->freeoffset))
 #ifdef BIT32
 #  define pile_get_free32(pile) (pile->freeghost)
 #else
-#  define pile_get_free32(pile) ((ghost32 *)(block_top(pile) + pile->freeoffset))
+#  define pile_get_free32(pile) ((ghost32 *)void_data(block_top(pile) + pile->freeoffset))
 #endif
 #define pile_get_free64(pile) (pile->freeghost)
 
