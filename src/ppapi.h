@@ -8,7 +8,7 @@
 
 #include "ppconf.h"
 
-#define pplib_version "v1.06 toxic"
+#define pplib_version "v1.97 toxic"
 #define pplib_author "p.jackowski@gust.org.pl"
 
 /* types */
@@ -16,8 +16,8 @@
 typedef int64_t ppint;
 typedef size_t ppuint; // machine word
 
-//typedef uint8_t ppbyte; // names/strings data
-typedef char ppbyte; // names/strings data
+//typedef uint8_t ppbyte;
+typedef char ppbyte;
 
 typedef double ppnum;
 
@@ -180,6 +180,7 @@ typedef struct ppdoc ppdoc;
 
 #define ppname_size(name) ((name)->size)
 #define ppname_exec(name) ((name)->flags & PPNAME_EXEC)
+#define ppname_data(name) ((name)->data)
 
 #define PPNAME_ENCODED (1 << 0)
 #define PPNAME_DECODED (1 << 1)
@@ -194,6 +195,7 @@ PPAPI ppbyte * ppname_encoded_data (ppname *name);
 /* string */
 
 #define ppstring_size(string) ((string)->size)
+#define ppstring_data(string) ((string)->data)
 
 #define PPSTRING_ENCODED (1 << 0)
 #define PPSTRING_DECODED (1 << 1)

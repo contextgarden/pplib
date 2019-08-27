@@ -37,7 +37,8 @@ typedef struct {
   iof bytesbuffer;
 } ppheap;
 
-void * ppbytes_flush (ppheap *heap, iof *O, size_t *psize);
+ppbyte * ppbytes_flush (ppheap *heap, iof *O, size_t *psize);
+
 void ppheap_init (ppheap *heap);
 void ppheap_free (ppheap *heap);
 void ppheap_renew (ppheap *heap);

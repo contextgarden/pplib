@@ -25,14 +25,14 @@ void ppheap_renew (ppheap *heap)
   ppbytes_buffer_init(heap);
 }
 
-void * ppbytes_flush (ppheap *heap, iof *O, size_t *psize)
+ppbyte * ppbytes_flush (ppheap *heap, iof *O, size_t *psize)
 {
-  void *data;
+  ppbyte *data;
   size_t size;
   
   //ASSERT(&heap->bytesheap == O->link);
   iof_put(O, '\0');
-  data = O->buf;
+  data = (ppbyte *)O->buf;
   size = (size_t)iof_size(O);
   ppbytes_heap_done(heap, data, size);
   *psize = size - 1;
