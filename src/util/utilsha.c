@@ -520,7 +520,7 @@ static void SHA256_Transform(SHA256_CTX *context, const uint32_t idata[16]) {
 
 static void SHA256_TransformAligned(SHA256_CTX *context, const uint8_t *data) {
   if (data_aligned4(data)) {
-    SHA256_Transform(context, (const uint32_t *)((void *)data)); // alignment ok
+    SHA256_Transform(context, (const uint32_t *)((const void *)data)); // alignment ok
   } else {
     uint32_t idata[16];
     memcpy(&idata[0], data, 16 * sizeof(uint32_t));
@@ -852,7 +852,7 @@ static void SHA512_Transform(SHA512_CTX *context, const uint64_t idata[16]) {
 
 static void SHA512_TransformAligned(SHA512_CTX *context, const uint8_t *data) {
   if (data_aligned8(data)) {
-    SHA512_Transform(context, (const uint64_t *)((void *)data));
+    SHA512_Transform(context, (const uint64_t *)((const void *)data)); // alignment ok
   } else {
     uint64_t idata[16];
     memcpy(&idata[0], data, 16 * sizeof(uint64_t));
