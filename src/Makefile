@@ -25,7 +25,7 @@ endif
 CC=gcc
 WLUIGI=-Wall -Wunused -Wimplicit -Wreturn-type -Wdeclaration-after-statement -Wno-unknown-pragmas -Wmissing-prototypes -Wmissing-declarations -Wparentheses -Wswitch -Wtrigraphs -Wcast-qual -Wcast-align -Wwrite-strings -Wold-style-definition -Wpointer-arith
 WHANS=-Wall -Wextra -Wcast-align -Wcast-qual -Wnested-externs -Wwrite-strings -Wdeclaration-after-statement -Wno-unknown-pragmas -Wpointer-arith
-W=$(WHANS)
+W=$(WLUIGI)
 
 CFLAGS=$(W) -O3
 

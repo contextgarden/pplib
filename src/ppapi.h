@@ -8,7 +8,7 @@
 
 #include "ppconf.h"
 
-#define pplib_version "v1.97 toxic"
+#define pplib_version "v2.0 almost"
 #define pplib_author "p.jackowski@gust.org.pl"
 
 /* types */
@@ -16,7 +16,6 @@
 typedef int64_t ppint;
 typedef size_t ppuint; // machine word
 
-//typedef uint8_t ppbyte;
 typedef char ppbyte;
 
 typedef double ppnum;

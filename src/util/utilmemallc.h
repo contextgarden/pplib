@@ -302,9 +302,9 @@ After adding a test for left space that helps in 'neglect remainig space or make
   blocks: 723 - a way better
   singles 0
   waste: 19.04% - slightly better
-    block ghosts 10.67%
-    chunk ghosts 4.61%
-    neglected block tails 3.76%
+  block ghosts 10.67%
+  chunk ghosts 4.61%
+  neglected block tails 3.76%
 
 The actual numbers vary depending on the buffer size, the average elements size and, of course, taken alignment variant. After
 some parameters tuning, on various tests we get 5-19% total waste for stocks, 3-14% total waste for heaps. But the basic scheme
@@ -540,9 +540,10 @@ is different than for size (size_t), we cannot cross 0xff/0xffff,... bondaries.
 #define average_block_chunk32(ream) (block_used32(ream) / ream->chunks)
 #define average_block_chunk64(ream) (block_used64(ream) / ream->chunks)
 
-/* neglect remaining block tail and start a new block or create a single block;
-   a test for (block->chunks > 0) is a sanity: if block->chunks is zero (block has a full space left), we shouldn't get there,
-   except when alloc->large is larger then alloc->space.. */
+/*
+neglect remaining block tail and start a new block or create a single block; a test for (block->chunks > 0) is a sanity;
+if block->chunks is zero (block has a full space left), we shouldn't get there, except when alloc->large is larger then alloc->space
+*/
 
 #define take_new_block8(alloc, ghoststruct, block, size) \
   ((size < alloc->large) && (block->left <= sizeof(ghoststruct) || (block->chunks > 0 && block->left <= average_block_chunk8(block))))

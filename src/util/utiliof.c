@@ -1675,7 +1675,7 @@ size_t iof_put_int32_radix (iof *O, int32_t number, int radix, int uc)
   return iof_write(O, s, size);
 }
 
-size_t iof_put_long_radix (iof *O, long number, int radix, int uc)
+size_t iof_put_slong_radix (iof *O, long number, int radix, int uc)
 {
   const char *s;
   size_t size;
