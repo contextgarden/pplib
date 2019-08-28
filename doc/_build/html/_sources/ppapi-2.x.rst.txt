@@ -74,8 +74,8 @@ A common container for all elementary PDF object types is ``ppobj`` structure. `
     union {
       ppint integer;
       ppnum number;
-      ppname name;
-      ppstring string;
+      ppname *name;
+      ppstring *string;
       pparray *array;
       ppdict *dict;
       ppstream *stream;
@@ -222,7 +222,7 @@ String
 ------
 
 PDF strings have the same internal construction as names, so most of names description above applies to strings as well.
-``ppstring`` is a structure (used to be an alias to ``char *``). ``string->data`` is ``\0``-terminated c-array of ppbytes.
+``ppstring`` is a structure (used to be an alias to ``char *``). ``string->data`` is ``\0``-terminated c-array of ``ppbytes``.
 To get the data::
 
   ppbyte * ppstring_data(ppstring *string); // string->data, macro
@@ -259,11 +259,11 @@ switch between encoded and decoded strings forms::
 
 For hex strings, encoded form contains hex digits, while decoded form contains arbitrary bytes (the result of hex decoding).
 Plain strings usually contains printable ASCII characters, but they might contain any binary data.
-As with names, objects parser produces both forms. The raw form with PDF escapes (or raw hex form) is considered the main one.
+As with names, objects parser produces both forms. The raw form with PDF escapes (or raw hex form) the main one.
 Eg. when you access ``obj->string`` you always get the encoded form. At any moment you can switch to its alter ego.
 
-No matter if the string is plain or hex, if its first two bytes (decoded) are UTF16 BOM, the string
-is considered unicode. ``ppstring`` object *knows* it is unicode or not::
+No matter if the string is plain or hex, if its first two bytes (decoded) are UTF16 BOM, the string is unicode.
+``ppstring`` object *knows* it is unicode or not::
 
   switch (ppstring_utf(string))
   {
@@ -331,10 +331,10 @@ When getting values from array and expecting a result of known type, use one of 
 As with ``ppobj_get_*`` suite, numeric types getters set the value of a given type and returns 1, if the type matches.
 Otherwise sets nothing and returns 0. Other getters return the value if the type matches, or NULL.
 
-Every function from ``pparray_get_*`` suite have its ``pparray_rget_*`` counterpart that
+Every function from ``pparray_get_*`` suite have its ``pparray_rget_*`` counterpart
 that dereferences indirect objects (as explained for ``ppobj_rget_*`` getters). Note that
-there is no ``pparray_get_stream()`` function, as streams in PDF are always indirect.
-To get the stream from array use::
+there is no ``pparray_get_stream()`` function, as streams in PDF are always indirect
+(may only reside in ``ref->object.stream``). To get the stream from array use::
 
   ppstream * pparray_rget_stream (pparray *array, size_t index);
 

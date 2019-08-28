@@ -168,8 +168,8 @@ internals to unconst. Besides, nothing is really const for C type casts.</p>
   <span class="n">union</span> <span class="p">{</span>
     <span class="n">ppint</span> <span class="n">integer</span><span class="p">;</span>
     <span class="n">ppnum</span> <span class="n">number</span><span class="p">;</span>
-    <span class="n">ppname</span> <span class="n">name</span><span class="p">;</span>
-    <span class="n">ppstring</span> <span class="n">string</span><span class="p">;</span>
+    <span class="n">ppname</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+    <span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">;</span>
     <span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">;</span>
     <span class="n">ppdict</span> <span class="o">*</span><span class="nb">dict</span><span class="p">;</span>
     <span class="n">ppstream</span> <span class="o">*</span><span class="n">stream</span><span class="p">;</span>
@@ -314,7 +314,7 @@ in whatever direction needs no extra decoding or allocation costs (the cost is p
 <div class="section" id="string">
 <h2>String<a class="headerlink" href="#string" title="Permalink to this headline">¶</a></h2>
 <p>PDF strings have the same internal construction as names, so most of names description above applies to strings as well.
-<code class="docutils literal notranslate"><span class="pre">ppstring</span></code> is a structure (used to be an alias to <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code>). <code class="docutils literal notranslate"><span class="pre">string-&gt;data</span></code> is <code class="docutils literal notranslate"><span class="pre">\0</span></code>-terminated c-array of ppbytes.
+<code class="docutils literal notranslate"><span class="pre">ppstring</span></code> is a structure (used to be an alias to <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code>). <code class="docutils literal notranslate"><span class="pre">string-&gt;data</span></code> is <code class="docutils literal notranslate"><span class="pre">\0</span></code>-terminated c-array of <code class="docutils literal notranslate"><span class="pre">ppbytes</span></code>.
 To get the data:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ppbyte</span> <span class="o">*</span> <span class="n">ppstring_data</span><span class="p">(</span><span class="n">ppstring</span> <span class="o">*</span><span class="n">string</span><span class="p">);</span> <span class="o">//</span> <span class="n">string</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">macro</span>
 </pre></div>
@@ -351,10 +351,10 @@ switch between encoded and decoded strings forms:</p>
 </div>
 <p>For hex strings, encoded form contains hex digits, while decoded form contains arbitrary bytes (the result of hex decoding).
 Plain strings usually contains printable ASCII characters, but they might contain any binary data.
-As with names, objects parser produces both forms. The raw form with PDF escapes (or raw hex form) is considered the main one.
+As with names, objects parser produces both forms. The raw form with PDF escapes (or raw hex form) the main one.
 Eg. when you access <code class="docutils literal notranslate"><span class="pre">obj-&gt;string</span></code> you always get the encoded form. At any moment you can switch to its alter ego.</p>
-<p>No matter if the string is plain or hex, if its first two bytes (decoded) are UTF16 BOM, the string
-is considered unicode. <code class="docutils literal notranslate"><span class="pre">ppstring</span></code> object <em>knows</em> it is unicode or not:</p>
+<p>No matter if the string is plain or hex, if its first two bytes (decoded) are UTF16 BOM, the string is unicode.
+<code class="docutils literal notranslate"><span class="pre">ppstring</span></code> object <em>knows</em> it is unicode or not:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">switch</span> <span class="p">(</span><span class="n">ppstring_utf</span><span class="p">(</span><span class="n">string</span><span class="p">))</span>
 <span class="p">{</span>
   <span class="n">case</span> <span class="n">PPSTRING_UTF16LE</span><span class="p">:</span> <span class="o">//</span> <span class="n">unicode</span> <span class="n">string</span><span class="p">,</span> <span class="n">utf16le</span>
@@ -420,10 +420,10 @@ To get the size:</p>
 </div>
 <p>As with <code class="docutils literal notranslate"><span class="pre">ppobj_get_*</span></code> suite, numeric types getters set the value of a given type and returns 1, if the type matches.
 Otherwise sets nothing and returns 0. Other getters return the value if the type matches, or NULL.</p>
-<p>Every function from <code class="docutils literal notranslate"><span class="pre">pparray_get_*</span></code> suite have its <code class="docutils literal notranslate"><span class="pre">pparray_rget_*</span></code> counterpart that
+<p>Every function from <code class="docutils literal notranslate"><span class="pre">pparray_get_*</span></code> suite have its <code class="docutils literal notranslate"><span class="pre">pparray_rget_*</span></code> counterpart
 that dereferences indirect objects (as explained for <code class="docutils literal notranslate"><span class="pre">ppobj_rget_*</span></code> getters). Note that
-there is no <code class="docutils literal notranslate"><span class="pre">pparray_get_stream()</span></code> function, as streams in PDF are always indirect.
-To get the stream from array use:</p>
+there is no <code class="docutils literal notranslate"><span class="pre">pparray_get_stream()</span></code> function, as streams in PDF are always indirect
+(may only reside in <code class="docutils literal notranslate"><span class="pre">ref-&gt;object.stream</span></code>). To get the stream from array use:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ppstream</span> <span class="o">*</span> <span class="n">pparray_rget_stream</span> <span class="p">(</span><span class="n">pparray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">index</span><span class="p">);</span>
 </pre></div>
 </div>
