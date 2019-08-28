@@ -50,7 +50,8 @@ Now ``ppstring`` and ``ppname`` are **structures**, keeping data and size member
 
 Data member is a pointer to (2-bytes aligned) bytes array -- ``ppbyte *``. ``ppbyte`` is an alias to ``char``.
 ``pplib`` makes no assumptions about ``ppbyte`` signedness. [I'd prefer to have ``uint8_t``, but better
-keep that in sync with ``ppdict_get_*`` suite, which accepts ``char *``; ``"string literals"`` in most cases.]
+keep that in sync with ``ppdict_get_*`` suite, which accepts ``char *``. Using ``"string literals"`` 
+with ``ppdict_get`` function is the most common case, I guess.]
 
 ``ppname_size()`` and ``ppstring_size() `` now have
 trivial ``ppname_data()`` and ``ppstring_data()`` counterparts::
@@ -77,7 +78,7 @@ are identical, then ``self->alfterego == self`` (never NULL). Helper functions f
   PPAPI ppbyte * ppstring_encoded_data (ppstring *string);
 
 Since ``ppname`` and ``ppstring`` are now structures, all API functions returning name/string or taking name/string
-as argument, now take **a pointer to name/string**. Watch out for ``ppdict_get_*`` functions suite. They still accept
+as an argument, now take **a pointer to name/string**. Watch out for ``ppdict_get_*`` functions suite. They still accept
 ``const char *`` key as an argument, but ``ppname`` type can no longer be used there::
 
   ppname key;
@@ -85,7 +86,7 @@ as argument, now take **a pointer to name/string**. Watch out for ``ppdict_get_*
   ppdict_get_something(dict, key.data); // ok
 
   ppname *pkey;
-  ppdict_get_something(dict, (const char *)pkey); // wrong,
+  ppdict_get_something(dict, (const char *)pkey); // wrong
   ppdict_get_something(dict, pkey->data);         // ok
 
 Consequently, functions / macros that used pointer to ``ppname`` (``ppdict_first()`` / ``ppdict_next()``),

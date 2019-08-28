@@ -130,7 +130,8 @@ another trick. This all was dirty and caused lots of alignment issues.</p>
 </div>
 <p>Data member is a pointer to (2-bytes aligned) bytes array – <code class="docutils literal notranslate"><span class="pre">ppbyte</span> <span class="pre">*</span></code>. <code class="docutils literal notranslate"><span class="pre">ppbyte</span></code> is an alias to <code class="docutils literal notranslate"><span class="pre">char</span></code>.
 <code class="docutils literal notranslate"><span class="pre">pplib</span></code> makes no assumptions about <code class="docutils literal notranslate"><span class="pre">ppbyte</span></code> signedness. [I’d prefer to have <code class="docutils literal notranslate"><span class="pre">uint8_t</span></code>, but better
-keep that in sync with <code class="docutils literal notranslate"><span class="pre">ppdict_get_*</span></code> suite, which accepts <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code>; <code class="docutils literal notranslate"><span class="pre">&quot;string</span> <span class="pre">literals&quot;</span></code> in most cases.]</p>
+keep that in sync with <code class="docutils literal notranslate"><span class="pre">ppdict_get_*</span></code> suite, which accepts <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code>. Using <code class="docutils literal notranslate"><span class="pre">&quot;string</span> <span class="pre">literals&quot;</span></code>
+with <code class="docutils literal notranslate"><span class="pre">ppdict_get</span></code> function is the most common case, I guess.]</p>
 <p><code class="docutils literal notranslate"><span class="pre">ppname_size()</span></code> and <code class="docutils literal notranslate"><span class="pre">ppstring_size()</span> <span class="pre">``</span> <span class="pre">now</span> <span class="pre">have</span>
 <span class="pre">trivial</span> <span class="pre">``ppname_data()</span></code> and <code class="docutils literal notranslate"><span class="pre">ppstring_data()</span></code> counterparts:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#define ppname_size(name) ((name)-&gt;size)</span>
@@ -156,14 +157,14 @@ are identical, then <code class="docutils literal notranslate"><span class="pre"
 </pre></div>
 </div>
 <p>Since <code class="docutils literal notranslate"><span class="pre">ppname</span></code> and <code class="docutils literal notranslate"><span class="pre">ppstring</span></code> are now structures, all API functions returning name/string or taking name/string
-as argument, now take <strong>a pointer to name/string</strong>. Watch out for <code class="docutils literal notranslate"><span class="pre">ppdict_get_*</span></code> functions suite. They still accept
+as an argument, now take <strong>a pointer to name/string</strong>. Watch out for <code class="docutils literal notranslate"><span class="pre">ppdict_get_*</span></code> functions suite. They still accept
 <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></code> key as an argument, but <code class="docutils literal notranslate"><span class="pre">ppname</span></code> type can no longer be used there:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ppname</span> <span class="n">key</span><span class="p">;</span>
 <span class="n">ppdict_get_something</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>      <span class="o">//</span> <span class="n">wrong</span>
 <span class="n">ppdict_get_something</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">data</span><span class="p">);</span> <span class="o">//</span> <span class="n">ok</span>
 
 <span class="n">ppname</span> <span class="o">*</span><span class="n">pkey</span><span class="p">;</span>
-<span class="n">ppdict_get_something</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="p">)</span><span class="n">pkey</span><span class="p">);</span> <span class="o">//</span> <span class="n">wrong</span><span class="p">,</span>
+<span class="n">ppdict_get_something</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="p">)</span><span class="n">pkey</span><span class="p">);</span> <span class="o">//</span> <span class="n">wrong</span>
 <span class="n">ppdict_get_something</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pkey</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">);</span>         <span class="o">//</span> <span class="n">ok</span>
 </pre></div>
 </div>
