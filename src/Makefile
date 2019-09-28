@@ -50,7 +50,8 @@ FLATEDIR=../zlib
 FLATELIB=$(FLATEDIR)/libz.static$(BUILDSUFFIX).a
 PPSTATICDEPS=$(FLATELIB)
 
-# test programm
+# tests
+TESTDIR=../../testsuite
 PPTEST1=$(OUTDIR)/pptest1$(EXEEXT)
 PPTEST2=$(OUTDIR)/pptest2$(EXEEXT)
 PPTEST3=$(OUTDIR)/pptest3$(EXEEXT)
@@ -95,6 +96,6 @@ clean:
 	rm -f $(OUTDIR)/*$(OBJEXT) $(OUTDIR)/*.a $(OUTDIR)/*$(EXEEXT)
 
 test: $(PPTEST1) $(PPTEST2) $(PPTEST3)
-	build/pptest1 test/*.pdf test/crypt/*.pdf
-	build/pptest2 test/*.pdf test/crypt/*.pdf
-	build/pptest3 test/*.pdf test/crypt/*.pdf
+	build/pptest1 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf
+	build/pptest2 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf
+	build/pptest3 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf

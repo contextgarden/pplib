@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "ppapi.h"
 
+/*
 static const char * get_file_name (const char *path)
 {
   const char *fn, *p;
@@ -11,6 +12,7 @@ static const char * get_file_name (const char *path)
       fn = p + 1;
   return fn;
 }
+*/
 
 static void box_info (ppdict *pagedict, FILE *fh)
 {
@@ -29,8 +31,6 @@ static int usage (const char *argv0)
   return 0;
 }
 
-#define OUTDIR "."
-
 static void log_callback (const char *message, void *alien)
 {
   fprintf((FILE *)alien, "\nooops: %s\n", message);
@@ -38,7 +38,7 @@ static void log_callback (const char *message, void *alien)
 
 int main (int argc, const char **argv)
 {
-  const char *filepath, *filename;
+  const char *filepath;
   int a;
   ppdoc *pdf;
   ppref *pageref;
@@ -86,8 +86,7 @@ int main (int argc, const char **argv)
         ppdoc_free(pdf);
         continue;
     }
-    filename = get_file_name(filepath);
-    sprintf(outname, OUTDIR "/%s.out", filename);
+    sprintf(outname, "%s.out", filepath);
     fh = fopen(outname, "wb");
     if (fh == NULL)
     {
