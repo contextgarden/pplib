@@ -62,7 +62,7 @@ v1.05
 -----
 Attempt to fix parsing inline images crap
 
-v1.97
+v2.00
 -----
 Deep rework on allocators.
 Deep rework on strings and names.
