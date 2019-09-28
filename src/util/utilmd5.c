@@ -167,7 +167,7 @@ static void md5_process(md5_state_t *pms, const uint8_t *data /*[64]*/)
        */
       if (!((data - (const uint8_t *)0) & 3)) {
       /* data are properly aligned */
-        X = (const uint32_t *)data;
+        X = (const uint32_t *)((void *)data); // avoid compiler warning
       } else {
         /* not aligned */
         memcpy(xbuf, data, 64);
