@@ -2736,7 +2736,6 @@ size_t ppdoc_memory (ppdoc *pdf, size_t *waste)
   ppbytes_heap_info(&pdf->heap, &info, 0);
   ppstruct_heap_info(&pdf->heap, &info, 1);
 
-  // after show_mem_info();
   *waste = info.ghosts + info.blockghosts + info.left; // info.ghosts == 0
   used = info.used + *waste;
   used += pdf->stack.space * sizeof(ppobj);
