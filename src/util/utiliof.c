@@ -1991,17 +1991,25 @@ size of img: 496
 
 typedef struct iof_heap iof_heap;
 
-struct iof_heap {
-  union { uint8_t *data; void *vdata; }; // union instead of casts (ARM)
-  union { uint8_t *pos; void *vpos; };
-  size_t size, space;
-  iof_heap *next, *prev;
-  int refcount;
-};
-
 typedef struct {
   iof_heap *heap;
 } iof_heap_ghost;
+
+
+struct iof_heap {
+  union { uint8_t *data; iof_heap_ghost *gdata; }; // union instead of casts (ARM)
+  union { uint8_t *pos; iof_heap_ghost *gpos; };
+  size_t size, space;
+  iof_heap *next, *prev;
+  int refcount;
+  uint8_t dummy[4]; // pad to 8N bytes
+};
+
+/*
+We use hidden heap pointer for every allocated buffer, so heap->data should be kept properly aligned.
+Dummy 4-bytes pad doesn't really matter (the pad is there anyway), but iof_heap_take() must pad the
+requested size.
+*/
 
 static iof_heap * iof_buffers_heap = NULL;
 static iof_heap * iof_filters_heap = NULL;
@@ -2017,7 +2025,7 @@ static iof_heap * iof_heap_new (size_t space)
 {
   iof_heap *iofheap;
   iofheap = (iof_heap *)util_malloc(sizeof(iof_heap) + space);
-  iofheap->vdata = iofheap->vpos = (void *)(iofheap + 1);
+  iofheap->gdata = iofheap->gpos = (iof_heap_ghost *)(iofheap + 1);
   iofheap->size = iofheap->space = space;
   iofheap->next = NULL;
   iofheap->prev = NULL;
@@ -2061,12 +2069,7 @@ void iof_filters_free (void)
 }
 
 #define iof_heap_get(hp, ghost, data, siz) \
- (ghost = (iof_heap_ghost *)((hp)->vpos), \
-  ghost->heap = hp, \
-  data = (uint8_t *)(ghost + 1), \
-  (hp)->pos += siz, \
-  (hp)->size -= siz, \
-  ++(hp)->refcount)
+ (ghost = (hp)->gpos, ghost->heap = (hp), data = (uint8_t *)(ghost + 1), (hp)->pos += siz, (hp)->size -= siz, ++(hp)->refcount)
 
 static void * iof_heap_take (iof_heap **pheap, size_t size)
 {
@@ -2075,13 +2078,15 @@ static void * iof_heap_take (iof_heap **pheap, size_t size)
   iof_heap *heap, *newheap, *next;
 
   heap = *pheap;
+  if (size & 7)
+  	size += 8 - (size & 7); // pad to 8N bytes so that (heap->pos + size) remains properly aligned
   size += sizeof(iof_heap_ghost);
   if (heap->size >= size)
   { /* take cheap mem from main heap */
     iof_heap_get(heap, ghost, data, size);
     return data;
   }
-  if (size <= heap->space >> 1)
+  if (size <= (heap->space >> 1))
   { /* make new cheap heap, make it front */
     *pheap = newheap = iof_heap_new(heap->space);
     newheap->next = heap;
@@ -2103,7 +2108,7 @@ static void * iof_heap_take (iof_heap **pheap, size_t size)
   return data;
 }
 
-void iof_heap_back (void *data)
+static void iof_heap_back (void *data)
 {
   iof_heap_ghost *ghost;
   iof_heap *heap, *next, *prev;
@@ -2130,21 +2135,17 @@ void iof_heap_back (void *data)
   }
 }
 
-void * iof_filter_new (size_t size)
-{ // to be removed
-  void *data;
+/**/
 
+/*
+void * iof_filter_new (size_t size)
+{
+  void *data;
   iof_filters_init();
   data = iof_heap_take(&iof_filters_heap, size);
   return memset(data, 0, size);
 }
-
-static uint8_t * iof_filter_buffer_new (size_t *psize)
-{
-  iof_filters_init();
-  *psize = IOF_BUFFER_SIZE;
-  return iof_heap_take(&iof_buffers_heap, IOF_BUFFER_SIZE);
-}
+*/
 
 iof * iof_filter_reader_new (iof_handler handler, size_t statesize, void **pstate)
 {
@@ -2156,7 +2157,8 @@ iof * iof_filter_reader_new (iof_handler handler, size_t statesize, void **pstat
   iof_filters_init();
   filter = iof_heap_take(&iof_filters_heap, sizeof(iof) + statesize);
   F = (iof *)memset(filter, 0, sizeof(iof) + statesize);
-  buffer = iof_filter_buffer_new(&buffersize);
+  buffer = iof_heap_take(&iof_buffers_heap, IOF_BUFFER_SIZE);
+  buffersize = IOF_BUFFER_SIZE;
   iof_reader_buffer(F, buffer, buffersize);
   F->flags |= IOF_HEAP|IOF_BUFFER_HEAP;
   F->more = handler;
@@ -2168,6 +2170,7 @@ iof * iof_filter_reader_with_buffer_new (iof_handler handler, size_t statesize, 
 { // for filters that has own buffer (string, some image filters)
   iof *F;
   void *filter;
+
   iof_filters_init();
   filter = iof_heap_take(&iof_filters_heap, sizeof(iof) + statesize);
   F = (iof *)memset(filter, 0, sizeof(iof) + statesize);
@@ -2188,7 +2191,8 @@ iof * iof_filter_writer_new (iof_handler handler, size_t statesize, void **pstat
   iof_filters_init();
   filter = iof_heap_take(&iof_filters_heap, sizeof(iof) + statesize);
   F = (iof *)memset(filter, 0, sizeof(iof) + statesize);
-  buffer = iof_filter_buffer_new(&buffersize);
+  buffer = iof_heap_take(&iof_buffers_heap, IOF_BUFFER_SIZE);
+  buffersize = IOF_BUFFER_SIZE;
   iof_writer_buffer(F, buffer, buffersize);
   F->flags |= IOF_HEAP|IOF_BUFFER_HEAP;
   F->more = handler;
@@ -2210,6 +2214,11 @@ iof * iof_filter_writer_with_buffer_new (iof_handler handler, size_t statesize, 
   *pstate = (F + 1);
   return F;
 }
+
+/**/
+
+#define iof_filter_free(F) iof_heap_back(F)
+#define iof_filter_buffer_free(data) iof_heap_back(data)
 
 /* close */
 
@@ -2279,8 +2288,8 @@ void iof_discard (iof *F)
     iof_close_file(F);
   else if (F->flags & IOF_FILE)
     iof_close_iofile(F);
-  else if (F->flags & IOF_NEXT)
-    iof_close_next(F);
+  //else if (F->flags & IOF_NEXT)
+  //  iof_close_next(F);
   iof_close_buffer(F);
   if (F->flags & IOF_HEAP)
     iof_filter_free(F);

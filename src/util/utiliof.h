@@ -640,10 +640,8 @@ UTILAPI void iof_debug (iof *I, const char *filename);
 void iof_filters_init (void);
 void iof_filters_free (void);
 
-void * iof_filter_new (size_t size);
-void iof_heap_back (void *data);
-#define iof_filter_free(F) iof_heap_back(F)
-#define iof_filter_buffer_free(data) iof_heap_back(data)
+// no longer used
+//void * iof_filter_new (size_t size);
 
 // &((void *)pstate
 

@@ -23,7 +23,7 @@ else
 endif
 
 CC=gcc
-WLUIGI=-Wall -Wunused -Wimplicit -Wreturn-type -Wdeclaration-after-statement -Wno-unknown-pragmas -Wmissing-prototypes -Wmissing-declarations -Wparentheses -Wswitch -Wtrigraphs -Wcast-qual -Wcast-align -Wwrite-strings -Wold-style-definition -Wpointer-arith
+WLUIGI=-Wall -Wextra -Wunused -Wimplicit -Wreturn-type -Wdeclaration-after-statement -Wno-unknown-pragmas -Wmissing-prototypes -Wmissing-declarations -Wparentheses -Wswitch -Wtrigraphs -Wcast-qual -Wcast-align -Wwrite-strings -Wold-style-definition -Wpointer-arith
 WHANS=-Wall -Wextra -Wcast-align -Wcast-qual -Wnested-externs -Wwrite-strings -Wdeclaration-after-statement -Wno-unknown-pragmas -Wpointer-arith
 W=$(WLUIGI)
 
@@ -60,7 +60,7 @@ PPTEST3=$(OUTDIR)/pptest3$(EXEEXT)
 INC=-I $(UTILSDIR)
 AUX=-I $(FLATEDIR)
 
-default: md $(PPSTATICLIB) $(PPTEST1) $(PPTEST2) $(PPTEST3)
+default: md $(PPSTATICLIB) $(PPTEST1) $(PPTEST2) $(PPTEST3) $(PPTEST4)
 
 md:
 	@[ -d $(OUTDIR) ] || mkdir -p $(OUTDIR)

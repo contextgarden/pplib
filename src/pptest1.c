@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include "ppapi.h"
+#include "util/utiliof.h"
 
 static const char * sizenum (size_t s)
 {
@@ -65,6 +66,8 @@ int main (int argc, const char **argv)
   const char *filepath;
   int a;
   ppdoc *pdf;
+  const void *data;
+  size_t size;
 
   if (argc < 2)
     return usage(argv[0]);
@@ -81,6 +84,21 @@ int main (int argc, const char **argv)
     printf("done.\n");
     print_info(pdf);
     ppdoc_free(pdf);
+    /* now loading from memory buffer */
+    printf("loading %s from mem buffer... ", filepath);
+    data = iof_copy_file_data(filepath, &size);
+    if (data != NULL)
+    {
+      pdf = ppdoc_mem(data, size);
+      if (pdf == NULL)
+      {
+        printf("failed\n");
+        continue;
+      }
+      printf("done.\n");
+      //print_info(pdf);
+      ppdoc_free(pdf);
+    }
   }
   return 0;
 }

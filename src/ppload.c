@@ -1369,7 +1369,7 @@ static void ppdoc_reader_init (ppdoc *pdf, iof_file *input)
   if (input->flags & IOF_DATA)
   {
     pdf->buffer = NULL;            // input iof_file is the buffer
-    iof_string_reader(I, NULL, 0); // gets IOF_DATA flag
+    iof_string_reader(I, NULL, 0);
   }
   else
   {
