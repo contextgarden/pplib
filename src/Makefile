@@ -96,6 +96,6 @@ clean:
 	rm -f $(OUTDIR)/*$(OBJEXT) $(OUTDIR)/*.a $(OUTDIR)/*$(EXEEXT)
 
 test: $(PPTEST1) $(PPTEST2) $(PPTEST3)
-	build/pptest1 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf
-	build/pptest2 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf
-	build/pptest3 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf
+	build/pptest1 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf >pptest1.log
+	build/pptest2 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf >pptest2.log
+	build/pptest3 $(TESTDIR)/*.pdf $(TESTDIR)/crypt/*.pdf >pptest3.log

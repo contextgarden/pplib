@@ -66,7 +66,11 @@ v2.00
 -----
 Deep rework on allocators.
 Deep rework on strings and names.
-Treat as toxic for a while.
+
+v2.01
+-----
+Fixed invalid stream buffer handling; iof_discard() no longer reclaims the source (filter->next) filter
+Sanity alignment adjustments in iof_heap.
 
 TODO
 ====

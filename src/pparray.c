@@ -4,11 +4,10 @@
 pparray * pparray_create (const ppobj *stackpos, size_t size, ppheap *heap)
 {
   pparray *array;
-  ppobj *data;
-  array = (pparray *)ppstruct_take(heap, sizeof(pparray) + size * sizeof(ppobj));
-  array->size = size;
-  array->data = data = (ppobj *)(array + 1);
-  memcpy(data, stackpos, size * sizeof(ppobj));
+  array = (pparray *)ppstruct_take(heap, sizeof(pparray));
+  array->data = (ppobj *)ppstruct_take(heap, size * sizeof(ppobj)); // separate chunk, alignment requirements warning otherwise
+  array->size = size;  
+  memcpy(array->data, stackpos, size * sizeof(ppobj));
   return array;
 }
 
