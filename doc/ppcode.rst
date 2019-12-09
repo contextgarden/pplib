@@ -72,7 +72,13 @@ v2.01
 Fixed invalid stream buffer handling; iof_discard() no longer reclaims the source (filter->next) filter
 Sanity alignment adjustments in iof_heap.
 
+v2.02
+-----
+Fixed incorrect encoding of strings alterego with octal escaping, thanks Luigi.
+On Hans request added ppdoc_filehandle() function and ppdoc_file() macro for loading ppdoc from FILE *
+
 TODO
 ====
+- fix segfault on OpenBSD 
 - external streams (egzotic)
 

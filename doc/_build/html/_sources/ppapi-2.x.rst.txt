@@ -624,6 +624,10 @@ To load a document from file::
 
   ppdoc * ppdoc_load (const char *filename);
 
+To load a document from file handle::
+
+  ppdoc * ppdoc_filehandle (FILE *file, int closefile); // closefile 1 to fclose() on end
+
 To load a document from memory data::
 
   ppdoc * ppdoc_mem (const void *data, size_t size);

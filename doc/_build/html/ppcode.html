@@ -14,7 +14,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
     <script type="text/javascript" src="_static/bizstyle.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -58,6 +58,8 @@
 <li><a class="reference internal" href="#v1-04">v1.04</a></li>
 <li><a class="reference internal" href="#v1-05">v1.05</a></li>
 <li><a class="reference internal" href="#v2-00">v2.00</a></li>
+<li><a class="reference internal" href="#v2-01">v2.01</a></li>
+<li><a class="reference internal" href="#v2-02">v2.02</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#todo">TODO</a></li>
@@ -100,6 +102,7 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="c1">#include &lt;stdio.h&gt;</span>
 <span class="c1">#include &quot;ppapi.h&quot;</span>
+<span class="c1">#include &quot;util/utiliof.h&quot;</span>
 
 <span class="n">static</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span> <span class="n">sizenum</span> <span class="p">(</span><span class="n">size_t</span> <span class="n">s</span><span class="p">)</span>
 <span class="p">{</span>
@@ -164,6 +167,8 @@
   <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">filepath</span><span class="p">;</span>
   <span class="nb">int</span> <span class="n">a</span><span class="p">;</span>
   <span class="n">ppdoc</span> <span class="o">*</span><span class="n">pdf</span><span class="p">;</span>
+  <span class="n">const</span> <span class="n">void</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+  <span class="n">size_t</span> <span class="n">size</span><span class="p">;</span>
 
   <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">usage</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
@@ -180,6 +185,21 @@
     <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;done.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
     <span class="n">print_info</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
     <span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
+    <span class="o">/*</span> <span class="n">now</span> <span class="n">loading</span> <span class="kn">from</span> <span class="nn">memory</span> <span class="n">buffer</span> <span class="o">*/</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;loading </span><span class="si">%s</span><span class="s2"> from mem buffer... &quot;</span><span class="p">,</span> <span class="n">filepath</span><span class="p">);</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">iof_copy_file_data</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">size</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">data</span> <span class="o">!=</span> <span class="n">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">pdf</span> <span class="o">=</span> <span class="n">ppdoc_mem</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">pdf</span> <span class="o">==</span> <span class="n">NULL</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;failed</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+        <span class="k">continue</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s2">&quot;done.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">);</span>
+      <span class="o">//</span><span class="n">print_info</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
+      <span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
+    <span class="p">}</span>
   <span class="p">}</span>
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
@@ -193,6 +213,7 @@
 <span class="c1">#include &lt;assert.h&gt;</span>
 <span class="c1">#include &quot;ppapi.h&quot;</span>
 
+<span class="o">/*</span>
 <span class="n">static</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span> <span class="n">get_file_name</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">fn</span><span class="p">,</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
@@ -201,6 +222,7 @@
       <span class="n">fn</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
   <span class="k">return</span> <span class="n">fn</span><span class="p">;</span>
 <span class="p">}</span>
+<span class="o">*/</span>
 
 <span class="n">static</span> <span class="n">void</span> <span class="n">box_info</span> <span class="p">(</span><span class="n">ppdict</span> <span class="o">*</span><span class="n">pagedict</span><span class="p">,</span> <span class="n">FILE</span> <span class="o">*</span><span class="n">fh</span><span class="p">)</span>
 <span class="p">{</span>
@@ -219,8 +241,6 @@
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="c1">#define OUTDIR &quot;.&quot;</span>
-
 <span class="n">static</span> <span class="n">void</span> <span class="n">log_callback</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">message</span><span class="p">,</span> <span class="n">void</span> <span class="o">*</span><span class="n">alien</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">fprintf</span><span class="p">((</span><span class="n">FILE</span> <span class="o">*</span><span class="p">)</span><span class="n">alien</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">ooops: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
@@ -228,7 +248,7 @@
 
 <span class="nb">int</span> <span class="n">main</span> <span class="p">(</span><span class="nb">int</span> <span class="n">argc</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
 <span class="p">{</span>
-  <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">filepath</span><span class="p">,</span> <span class="o">*</span><span class="n">filename</span><span class="p">;</span>
+  <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">filepath</span><span class="p">;</span>
   <span class="nb">int</span> <span class="n">a</span><span class="p">;</span>
   <span class="n">ppdoc</span> <span class="o">*</span><span class="n">pdf</span><span class="p">;</span>
   <span class="n">ppref</span> <span class="o">*</span><span class="n">pageref</span><span class="p">;</span>
@@ -276,8 +296,7 @@
         <span class="n">ppdoc_free</span><span class="p">(</span><span class="n">pdf</span><span class="p">);</span>
         <span class="k">continue</span><span class="p">;</span>
     <span class="p">}</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="n">get_file_name</span><span class="p">(</span><span class="n">filepath</span><span class="p">);</span>
-    <span class="n">sprintf</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="n">OUTDIR</span> <span class="s2">&quot;/</span><span class="si">%s</span><span class="s2">.out&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">);</span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.out&quot;</span><span class="p">,</span> <span class="n">filepath</span><span class="p">);</span>
     <span class="n">fh</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">fh</span> <span class="o">==</span> <span class="n">NULL</span><span class="p">)</span>
     <span class="p">{</span>
@@ -445,7 +464,7 @@ int main (int argc, const char **argv)
 
 <span class="c1">#include &quot;ppconf.h&quot;</span>
 
-<span class="c1">#define pplib_version &quot;v2.0 almost&quot;</span>
+<span class="c1">#define pplib_version &quot;v2.02 still toxic&quot;</span>
 <span class="c1">#define pplib_author &quot;p.jackowski@gust.org.pl&quot;</span>
 
 <span class="o">/*</span> <span class="n">types</span> <span class="o">*/</span>
@@ -748,6 +767,8 @@ int main (int argc, const char **argv)
 <span class="o">/*</span> <span class="n">doc</span> <span class="o">*/</span>
 
 <span class="n">PPAPI</span> <span class="n">ppdoc</span> <span class="o">*</span> <span class="n">ppdoc_load</span> <span class="p">(</span><span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">);</span>
+<span class="n">PPAPI</span> <span class="n">ppdoc</span> <span class="o">*</span> <span class="n">ppdoc_filehandle</span> <span class="p">(</span><span class="n">FILE</span> <span class="o">*</span><span class="n">file</span><span class="p">,</span> <span class="nb">int</span> <span class="n">closefile</span><span class="p">);</span>
+<span class="c1">#define ppdoc_file(file) ppdoc_filehandle(file, 1)</span>
 <span class="n">PPAPI</span> <span class="n">ppdoc</span> <span class="o">*</span> <span class="n">ppdoc_mem</span> <span class="p">(</span><span class="n">const</span> <span class="n">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
 <span class="n">PPAPI</span> <span class="n">void</span> <span class="n">ppdoc_free</span> <span class="p">(</span><span class="n">ppdoc</span> <span class="o">*</span><span class="n">pdf</span><span class="p">);</span>
 
@@ -883,13 +904,23 @@ Revised streams handling, ppstream API extended</p>
 <div class="section" id="v2-00">
 <h2>v2.00<a class="headerlink" href="#v2-00" title="Permalink to this headline">¶</a></h2>
 <p>Deep rework on allocators.
-Deep rework on strings and names.
-Treat as toxic for a while.</p>
+Deep rework on strings and names.</p>
+</div>
+<div class="section" id="v2-01">
+<h2>v2.01<a class="headerlink" href="#v2-01" title="Permalink to this headline">¶</a></h2>
+<p>Fixed invalid stream buffer handling; iof_discard() no longer reclaims the source (filter-&gt;next) filter
+Sanity alignment adjustments in iof_heap.</p>
+</div>
+<div class="section" id="v2-02">
+<h2>v2.02<a class="headerlink" href="#v2-02" title="Permalink to this headline">¶</a></h2>
+<p>Fixed incorrect encoding of strings alterego with octal escaping, thanks Luigi.
+On Hans request added ppdoc_filehandle() function and ppdoc_file() macro for loading ppdoc from FILE *</p>
 </div>
 </div>
 <div class="section" id="todo">
 <h1>TODO<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
+<li>fix segfault on OpenBSD</li>
 <li>external streams (egzotic)</li>
 </ul>
 </div>
@@ -914,7 +945,7 @@ Treat as toxic for a while.</p>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, p.jackowski@gust.org.pl.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
     </div>
   </body>
 </html>
