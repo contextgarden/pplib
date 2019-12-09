@@ -111,7 +111,7 @@ static ppname * ppscan_name (iof *I, ppheap *heap)
     O = ppbytes_buffer(heap, encoded->size); // decoded always a bit smaller
     for (p = encoded->data, e = p + encoded->size; p < e; ++p)
     {
-      if (*p == '#' && p + 2 < e && (h1 = pphex(p[1])) >= 0 && (h2 = pphex(p[2])) >= 0) 
+      if (*p == '#' && p + 2 < e && (h1 = pphex(p[1])) >= 0 && (h2 = pphex(p[2])) >= 0)
       {
         iof_set(O, ((h1 << 4)|h2));
         p += 2;
@@ -122,7 +122,7 @@ static ppname * ppscan_name (iof *I, ppheap *heap)
     decoded = (ppname *)ppstruct_take(heap, sizeof(ppname));
     decoded->data = ppbytes_flush(heap, O, &decoded->size);
     encoded->flags = PPNAME_ENCODED;
-    decoded->flags = PPNAME_DECODED;    
+    decoded->flags = PPNAME_DECODED;
     encoded->alterego = decoded, decoded->alterego = encoded;
   }
   else
@@ -155,7 +155,7 @@ static ppname * ppscan_exec (iof *I, ppheap *heap, uint8_t firstbyte)
     O = ppbytes_buffer(heap, encoded->size);
     for (p = encoded->data, e = p + encoded->size; p < e; ++p)
     {
-      if (*p == '#' && p + 2 < e && (h1 = pphex(p[1])) >= 0 && (h2 = pphex(p[2])) >= 0) 
+      if (*p == '#' && p + 2 < e && (h1 = pphex(p[1])) >= 0 && (h2 = pphex(p[2])) >= 0)
       {
         iof_set(O, ((h1 << 4)|h2));
         p += 2;
@@ -361,7 +361,7 @@ static ppstring * ppscan_base16 (iof *I, ppheap *heap)
 {
   ppstring *encoded, *decoded;
   iof *O;
-  int c;  
+  int c;
   ppbyte *p, *e;
   char h1, h2;
 
@@ -399,7 +399,7 @@ static ppstring * ppstring_buffer (iof *O, ppheap *heap)
 
   decoded = (ppstring *)ppstruct_take(heap, sizeof(ppstring));
   decoded->data = ppbytes_flush(heap, O, &decoded->size);
-  
+
   O = ppbytes_buffer(heap, (decoded->size << 1) + 1); // the exact size known
   for (p = decoded->data, e = p + decoded->size; p < e; ++p)
     iof_set2(O, base16_uc_alphabet[(*p) >> 4], base16_uc_alphabet[(*p) & 0xF]);
@@ -509,7 +509,7 @@ static ppstring * ppscan_base85 (iof *I, ppheap *heap)
   ppstring *encoded, *decoded;
   iof *O, B;
   int c;
-  
+
   O = ppbytes_buffer(heap, PPSTRING_INIT);
   for (c = iof_char(I); (c >= '!' && c <= 'u') || c == 'z' || c == 'y'; c = iof_next(I))
     iof_put(O, c);
@@ -664,6 +664,7 @@ static ppstring * ppscan_crypt_string (iof *I, ppcrypt *crypt, ppheap *heap)
           iof_put(O, *p);
           break;
         case -1:
+          c = *p;
           iof_put4(O, '\\', (c >> 6) + '0', ((c >> 3) & 7) + '0', (c & 7) + '0');
           break;
         default:
@@ -2268,7 +2269,7 @@ void ppdoc_free (ppdoc *pdf)
 {
   //iof_file_free(&pdf->input);
   iof_file_decref(&pdf->input);
-  ppstack_free_buffer(&pdf->stack);  
+  ppstack_free_buffer(&pdf->stack);
   ppheap_free(&pdf->heap); // last, invalidates pdf!
 }
 
