@@ -8,7 +8,7 @@
 
 #include "ppconf.h"
 
-#define pplib_version "v2.01 almost"
+#define pplib_version "v2.02 still toxic"
 #define pplib_author "p.jackowski@gust.org.pl"
 
 /* types */
@@ -311,6 +311,8 @@ PPAPI ppref * ppxref_find (ppxref *xref, ppuint refnumber);
 /* doc */
 
 PPAPI ppdoc * ppdoc_load (const char *filename);
+PPAPI ppdoc * ppdoc_filehandle (FILE *file, int closefile);
+#define ppdoc_file(file) ppdoc_filehandle(file, 1)
 PPAPI ppdoc * ppdoc_mem (const void *data, size_t size);
 PPAPI void ppdoc_free (ppdoc *pdf);
 

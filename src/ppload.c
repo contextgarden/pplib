@@ -2257,6 +2257,17 @@ ppdoc * ppdoc_load (const char *filename)
   return ppdoc_create(&input);
 }
 
+ppdoc * ppdoc_filehandle (FILE *file, int closefile)
+{
+  iof_file input;
+  if (file == NULL)
+    return NULL;
+  iof_file_init(&input, file);
+  if (closefile)
+    input.flags |= IOF_CLOSE_FILE;
+  return ppdoc_create(&input);
+}
+
 ppdoc * ppdoc_mem (const void *data, size_t size)
 {
   iof_file input;
