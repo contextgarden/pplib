@@ -1,0 +1,72 @@
+# based on win32\Makefile.msc
+
+STATICOPTS=/nologo /W3 /O2 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE
+SHAREDOPTS=/nologo /W3 /O2 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE
+
+ZLIBSTATICLIB=build\zlib.static.lib
+ZLIBSHAREDLIB=build\zlib.shared.lib
+
+ZLIBSRC=adler32.c compress.c crc32.c deflate.c gzclose.c gzlib.c gzread.c \
+       gzwrite.c infback.c inffast.c inflate.c inftrees.c trees.c uncompr.c zutil.c
+
+ZLIBSTATICOBJS=$(ZLIBSRC:.c=.static.obj)
+ZLIBSHAREDOBJS=$(ZLIBSRC:.c=.shared.obj)
+
+!IF 1
+STATICOPTS=$(STATICOPTS) /DASMV /DASMINF
+SHAREDOPTS=$(SHAREDOPTS) /DASMV /DASMINF
+ZLIBSTATICOBJA=inffasx64.static.obj gvmat64.static.obj inffas8664.static.obj
+ZLIBSHAREDOBJA=inffasx64.shared.obj gvmat64.shared.obj inffas8664.shared.obj
+# watch out, ml does not support /Fo: (it accets /Fo withoiut colon)
+# ASFLAGS = -coff -Zi -DASMV -DASMINF # -coff no longer recognized
+ASFLAGS=/Zi /DASMV /DASMINF
+!ELSE
+ZLIBSTATICOBJA=
+ZLIBSHAREDOBJA=
+!ENDIF
+
+# targets
+
+all: static shared
+
+static: $(ZLIBSTATICLIB)
+
+shared: $(ZLIBSHAREDLIB)
+
+$(ZLIBSTATICLIB): $(ZLIBSTATICOBJS) $(ZLIBSTATICOBJA)
+	lib /nologo /out:$@ $**
+
+$(ZLIBSHAREDLIB): $(ZLIBSHAREDOBJS) $(ZLIBSHAREDOBJA)
+	lib /nologo /out:$@ $**
+
+$(ZLIBSTATICOBJS): $(*B).c
+  cl $(STATICOPTS) /Fo:$@ /c $**
+
+$(ZLIBSHAREDOBJS): $(*B).c
+  cl $(SHAREDOPTS) /Fo:$@ /c $**
+
+#{contrib\masmx64}.c.obj:
+# 	cl $(STATICOPTS) /I. /c $<
+
+inffas8664.static.obj: contrib\masmx64\$(*B).c
+  cl $(STATICOPTS) /I. /Fo:$@ /c $**
+
+inffas8664.shared.obj: contrib\masmx64\$(*B).c
+  cl $(STATICOPTS) /I. /Fo:$@ /c $**
+
+#{contrib\masmx64}.asm.obj:
+#  $(AS) $(ASFLAGS) /Fo:$@ /c $<
+
+inffasx64.static.obj gvmat64.static.obj: contrib\masmx64\$(*B).asm
+  ml64 /nologo $(ASFLAGS) /Fo$@ /c $**
+
+inffasx64.shared.obj gvmat64.shared.obj: contrib\masmx64\$(*B).asm
+  ml64 /nologo $(ASFLAGS) /Fo$@ /c $**
+
+# clean
+
+clean:
+  del *.obj
+
+distclean: clean
+  del $(ZLIBSTATICLIB) $(ZLIBSHAREDLIB)
