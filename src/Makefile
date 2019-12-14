@@ -8,7 +8,6 @@ ifeq ($(UNAME),Linux)
 	BUILDSUFFIX=_ux_$(ARCH)
 	SOEXT=.so
 	EXEEXT=
-	STATICCOPTS=
 #	SHAREDCOPTS=-fPIC
 	LFLAGS=
 	LIBS=-lm
@@ -16,7 +15,6 @@ else
 	BUILDSUFFIX=_win_$(ARCH)
 	SOEXT=.dll
 	EXEEXT=.exe
-	STATICCOPTS=
 #	SHAREDCOPTS=-DPPDLL
 	LFLAGS = -Wl,--output-def,$@.def,--out-implib,$@.a
 	LIBS=
@@ -51,7 +49,7 @@ FLATELIB=$(FLATEDIR)/libz.static$(BUILDSUFFIX).a
 PPSTATICDEPS=$(FLATELIB)
 
 # tests
-TESTDIR=../../testsuite
+TESTDIR=../../pplib-tests
 PPTEST1=$(OUTDIR)/pptest1$(EXEEXT)
 PPTEST2=$(OUTDIR)/pptest2$(EXEEXT)
 PPTEST3=$(OUTDIR)/pptest3$(EXEEXT)
@@ -66,30 +64,30 @@ md:
 	@[ -d $(OUTDIR) ] || mkdir -p $(OUTDIR)
 
 $(PPSTATICOBJ): $(OUTDIR)/%$(OBJEXT): %.c %.h
-	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INC) -o $@ -c $<
 
 $(PPSTATICALLOCOBJ): $(OUTDIR)/%$(OBJEXT): $(UTILSDIR)/%.c $(UTILSDIR)/%.h
-	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INC) -o $@ -c $<
 
 $(PPSTATICUTILSOBJ): $(OUTDIR)/%$(OBJEXT): $(UTILSDIR)/%.c $(UTILSDIR)/%.h
-	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INC) -o $@ -c $<
 
 $(PPSTATICFILTERSOBJ): $(OUTDIR)/%$(OBJEXT): $(UTILSDIR)/%.c $(UTILSDIR)/%.h
-	$(CC) $(CFLAGS) $(STATICCOPTS) $(INC) $(AUX) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INC) $(AUX) -o $@ -c $<
 
 $(PPSTATICLIB): $(PPSTATICOBJ) $(PPSTATICALLOCOBJ) $(PPSTATICUTILSOBJ) $(PPSTATICFILTERSOBJ)
 	ar rcs $@ $^
 
 $(PPTEST1): $(PPSTATICLIB) pptest1.c
-	$(CC) $(CFLAGS) $(STATICCOPTS) -o $(OUTDIR)/pptest1$(OBJEXT) -c pptest1.c
+	$(CC) $(CFLAGS) -o $(OUTDIR)/pptest1$(OBJEXT) -c pptest1.c
 	$(CC) -static-libgcc $(CFLAGS) -o $(PPTEST1) $(OUTDIR)/pptest1$(OBJEXT) $(PPSTATICLIB) $(PPSTATICDEPS) $(LIBS)
 
 $(PPTEST2): $(PPSTATICLIB) pptest2.c
-	$(CC) $(CFLAGS) $(STATICCOPTS) -o $(OUTDIR)/pptest2$(OBJEXT) -c pptest2.c
+	$(CC) $(CFLAGS) -o $(OUTDIR)/pptest2$(OBJEXT) -c pptest2.c
 	$(CC) -static-libgcc $(CFLAGS) -o $(PPTEST2) $(OUTDIR)/pptest2$(OBJEXT) $(PPSTATICLIB) $(PPSTATICDEPS) $(LIBS)
 
 $(PPTEST3): $(PPSTATICLIB) pptest3.c
-	$(CC) $(CFLAGS) $(STATICCOPTS) -I util -o $(OUTDIR)/pptest3$(OBJEXT) -c pptest3.c
+	$(CC) $(CFLAGS) -I util -o $(OUTDIR)/pptest3$(OBJEXT) -c pptest3.c
 	$(CC) -static-libgcc $(CFLAGS) -o $(PPTEST3) $(OUTDIR)/pptest3$(OBJEXT) $(PPSTATICLIB) $(PPSTATICDEPS) $(LIBS)
 
 clean:
