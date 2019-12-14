@@ -2375,7 +2375,6 @@ typedef struct {
   size_t offset;
 } file_state;
 
-
 #define file_state_init(state, off, len) ((state)->offset = off, (state)->length = len)
 
 typedef struct {
@@ -2384,6 +2383,12 @@ typedef struct {
 } stream_state;
 
 #define stream_state_init(state, off, len) ((state)->offset = off, (state)->length = len)
+
+/* union type to avoid 'dereferencing type-punned .. ' warnings on (void **) case */
+
+typedef union { file_state *filestate; stream_state *streamstate; void *voidstate; } fs_state_pointer;
+
+/**/
 
 static size_t file_read (iof *I)
 {
@@ -2558,24 +2563,24 @@ static size_t filter_iofile_writer (iof *O, iof_mode mode)
 iof * iof_filter_file_handle_reader (FILE *file)
 {
   iof *I;
-  file_state *state;
+  fs_state_pointer P;
   if (file == NULL)
     return NULL;
-  I = iof_filter_reader(filter_file_reader, sizeof(file_state), &state);
+  I = iof_filter_reader(filter_file_reader, sizeof(file_state), &P.voidstate);
   iof_setup_file(I, file);
-  file_state_init(state, 0, 0);
+  file_state_init(P.filestate, 0, 0);
   return I;
 }
 
 iof * iof_filter_file_handle_writer (FILE *file)
 {
   iof *O;
-  file_state *state;
+  fs_state_pointer P;
   if (file == NULL)
     return NULL;
-  O = iof_filter_writer(filter_file_writer, sizeof(file_state), &state);
+  O = iof_filter_writer(filter_file_writer, sizeof(file_state), &P.voidstate);
   iof_setup_file(O, file);
-  file_state_init(state, 0, 0);
+  file_state_init(P.filestate, 0, 0);
   return O;
 }
 
@@ -2584,22 +2589,22 @@ iof * iof_filter_file_handle_writer (FILE *file)
 iof * iof_filter_iofile_reader (iof_file *iofile, size_t offset)
 {
   iof *I;
-  file_state *state;
+  fs_state_pointer P;
   if (!iof_file_reopen(iofile))
     return NULL;
-  I = iof_filter_reader(filter_iofile_reader, sizeof(file_state), &state);
+  I = iof_filter_reader(filter_iofile_reader, sizeof(file_state), &P.voidstate);
   iof_setup_iofile(I, iofile);
-  file_state_init(state, offset, 0);
+  file_state_init(P.filestate, offset, 0);
   return I;
 }
 
 iof * iof_filter_iofile_writer (iof_file *iofile, size_t offset)
 {
   iof *O;
-  file_state *state;
-  O = iof_filter_writer(filter_iofile_writer, sizeof(file_state), &state);
+  fs_state_pointer P;
+  O = iof_filter_writer(filter_iofile_writer, sizeof(file_state), &P.voidstate);
   iof_setup_iofile(O, iofile);
-  file_state_init(state, offset, 0);
+  file_state_init(P.filestate, offset, 0);
   return O;
 }
 
@@ -2608,13 +2613,13 @@ iof * iof_filter_iofile_writer (iof_file *iofile, size_t offset)
 iof * iof_filter_file_reader (const char *filename)
 {
   iof *I;
-  file_state *state;
+  fs_state_pointer P;
   FILE *file;
   if ((file = fopen(filename, "rb")) == NULL)
     return NULL;
-  I = iof_filter_reader(filter_file_reader, sizeof(file_state), &state);
+  I = iof_filter_reader(filter_file_reader, sizeof(file_state), &P.voidstate);
   iof_setup_file(I, file);
-  file_state_init(state, 0, 0);
+  file_state_init(P.filestate, 0, 0);
   I->flags |= IOF_CLOSE_FILE;
   return I;
 }
@@ -2622,13 +2627,13 @@ iof * iof_filter_file_reader (const char *filename)
 iof * iof_filter_file_writer (const char *filename)
 {
   iof *O;
-  file_state *state;
+  fs_state_pointer P;
   FILE *file;
   if ((file = fopen(filename, "wb")) == NULL)
     return NULL;
-  O = iof_filter_writer(filter_file_writer, sizeof(file_state), &state);
+  O = iof_filter_writer(filter_file_writer, sizeof(file_state), &P.voidstate);
   iof_setup_file(O, file);
-  file_state_init(state, 0, 0);
+  file_state_init(P.filestate, 0, 0);
   O->flags |= IOF_CLOSE_FILE;
   return O;
 }
@@ -2672,16 +2677,16 @@ iof * iof_filter_string_writer (const void *s, size_t length)
 iof * iof_filter_buffer_writer (size_t size)
 { // filter alternative of iof_buffer_create()
   iof *O;
-  void *dummy;
+  fs_state_pointer dummy;
   uint8_t *buffer;
   if (size > IOF_BUFFER_SIZE)
   {
     buffer = (uint8_t *)util_malloc(size);
-    O = iof_filter_writer_with_buffer(iof_mem_handler, 0, &dummy, buffer, size);
+    O = iof_filter_writer_with_buffer(iof_mem_handler, 0, &dummy.voidstate, buffer, size);
     O->flags |= IOF_BUFFER_ALLOC;
     return O;
   }
-  return iof_filter_writer(iof_mem_handler, 0, &dummy);
+  return iof_filter_writer(iof_mem_handler, 0, &dummy.voidstate);
 }
 
 /* stream */
@@ -2807,10 +2812,10 @@ static size_t filter_iofile_stream_reader (iof *I, iof_mode mode)
 iof * iof_filter_stream_reader (FILE *file, size_t offset, size_t length)
 {
   iof *I;
-  stream_state *state;
-  I = iof_filter_reader(filter_file_stream_reader, sizeof(stream_state), &state);
+  fs_state_pointer P;
+  I = iof_filter_reader(filter_file_stream_reader, sizeof(stream_state), &P.voidstate);
   iof_setup_file(I, file);
-  stream_state_init(state, offset, length);
+  stream_state_init(P.streamstate, offset, length);
   fseek(file, (long)offset, SEEK_SET); // or perhaps it should be call in file_stream_read(), like iof_file_sync()?
   return I;
 }
@@ -2818,12 +2823,12 @@ iof * iof_filter_stream_reader (FILE *file, size_t offset, size_t length)
 iof * iof_filter_stream_coreader (iof_file *iofile, size_t offset, size_t length)
 {
   iof *I;
-  stream_state *state;
+  fs_state_pointer P;
   if (!iof_file_reopen(iofile))
     return NULL;
-  I = iof_filter_reader(filter_iofile_stream_reader, sizeof(stream_state), &state);
+  I = iof_filter_reader(filter_iofile_stream_reader, sizeof(stream_state), &P.voidstate);
   iof_setup_iofile(I, iofile);
-  stream_state_init(state, offset, length);
+  stream_state_init(P.streamstate, offset, length);
   return I;
 }
 
@@ -2908,20 +2913,20 @@ static size_t filter_iofile_stream_writer (iof *O, iof_mode mode)
 iof * iof_filter_stream_writer (FILE *file)
 {
   iof *O;
-  stream_state *state;
-  O = iof_filter_writer(filter_file_stream_writer, sizeof(stream_state), &state);
+  fs_state_pointer P;
+  O = iof_filter_writer(filter_file_stream_writer, sizeof(stream_state), &P.voidstate);
   iof_setup_file(O, file);
-  stream_state_init(state, 0, 0);
+  stream_state_init(P.streamstate, 0, 0);
   return O;
 }
 
 iof * iof_filter_stream_cowriter (iof_file *iofile, size_t offset)
 {
   iof *O;
-  stream_state *state;
-  O = iof_filter_writer(filter_iofile_stream_writer, sizeof(stream_state), &state);
+  fs_state_pointer P;
+  O = iof_filter_writer(filter_iofile_stream_writer, sizeof(stream_state), &P.voidstate);
   iof_setup_iofile(O, iofile);
-  stream_state_init(state, offset, 0);
+  stream_state_init(P.streamstate, offset, 0);
   return O;
 }
 
@@ -2929,20 +2934,19 @@ iof * iof_filter_stream_cowriter (iof_file *iofile, size_t offset)
 
 FILE * iof_filter_file_reader_source (iof *I, size_t *poffset, size_t *plength)
 {
-  stream_state *sstate;
-  file_state *fstate;
+  fs_state_pointer P;
   if (I->more == filter_file_stream_reader) // I is the result of iof_filter_stream_reader()
   {
-    sstate = iof_filter_state(stream_state *, I);
-    *poffset = sstate->offset;
-    *plength = sstate->length; // might be 0 but it is ok for file readers
+    P.streamstate = iof_filter_state(stream_state *, I);
+    *poffset = P.streamstate->offset;
+    *plength = P.streamstate->length; // might be 0 but it is ok for file readers
     return I->file;
   }
   if (I->more == filter_file_reader)
   {
-    fstate = iof_filter_state(file_state *, I);
-    *poffset = fstate->offset;
-    *plength = fstate->length; // might be 0 but it is ok for file readers
+    P.filestate = iof_filter_state(file_state *, I);
+    *poffset = P.filestate->offset;
+    *plength = P.filestate->length; // might be 0 but it is ok for file readers
     return I->file;
   }
   return NULL;
@@ -2950,20 +2954,19 @@ FILE * iof_filter_file_reader_source (iof *I, size_t *poffset, size_t *plength)
 
 iof_file * iof_filter_file_coreader_source (iof *I, size_t *poffset, size_t *plength)
 {
-  stream_state *sstate;
-  file_state *fstate;
+  fs_state_pointer P;
   if (I->more == filter_iofile_stream_reader) // I is the result of iof_filter_stream_coreader()
   {
-    sstate = iof_filter_state(stream_state *, I);
-    *poffset = sstate->offset;
-    *plength = sstate->length;
+    P.streamstate = iof_filter_state(stream_state *, I);
+    *poffset = P.streamstate->offset;
+    *plength = P.streamstate->length;
     return I->iofile;
   }
   if (I->more == filter_iofile_reader)
   {
-    fstate = iof_filter_state(file_state *, I);
-    *poffset = fstate->offset;
-    *plength = fstate->length;
+    P.filestate = iof_filter_state(file_state *, I);
+    *poffset = P.filestate->offset;
+    *plength = P.filestate->length;
     return I->iofile;
   }
   return NULL;

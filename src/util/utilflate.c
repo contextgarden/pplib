@@ -1,8 +1,9 @@
 
+#include <zlib.h>
+
 #include "utilmem.h"
 #include "utillog.h"
 #include "utilflate.h"
-#include <zlib.h>
 
 /* flate codec */
 
@@ -82,6 +83,8 @@ struct flate_state {
   int status;
   int level; /* encoder compression level -1..9 */
 };
+
+typedef union { flate_state *flatestate; void *voidstate; } flate_state_pointer; // to avoid 'dereferencing type-puned ...' warnings
 
 enum {
   FLATE_IN,
@@ -292,25 +295,25 @@ static size_t flate_encoder (iof *F, iof_mode mode)
 iof * iof_filter_flate_decoder (iof *N)
 {
   iof *I;
-  flate_state *state;
-  I = iof_filter_reader(flate_decoder, sizeof(flate_state), &state);
+  flate_state_pointer P;
+  I = iof_filter_reader(flate_decoder, sizeof(flate_state), &P.voidstate);
   iof_setup_next(I, N);
-  if (flate_decoder_init(state) == NULL)
+  if (flate_decoder_init(P.flatestate) == NULL)
   {
     iof_discard(I);
     return NULL;
   }
-  state->flush = 1;
+  P.flatestate->flush = 1;
   return I;
 }
 
 iof * iof_filter_flate_encoder (iof *N)
 {
   iof *O;
-  flate_state *state;
-  O = iof_filter_writer(flate_encoder, sizeof(flate_state), &state);
+  flate_state_pointer P;
+  O = iof_filter_writer(flate_encoder, sizeof(flate_state), &P.voidstate);
   iof_setup_next(O, N);
-  if (flate_encoder_init(state) == NULL)
+  if (flate_encoder_init(P.flatestate) == NULL)
   {
     iof_discard(O);
     return NULL;

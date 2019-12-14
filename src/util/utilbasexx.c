@@ -19,6 +19,8 @@ struct runlength_state {
   uint8_t *pos;
 };
 
+typedef union { basexx_state *basexxstate; runlength_state *runlengthstate; void *voidstate; } basexx_state_pointer; // to avoid 'dereferencing type-puned ...' warnings
+
 /* config */
 
 #if defined(BASEXX_PDF)
@@ -1177,7 +1179,7 @@ iof_status runlength_encode (iof *I, iof *O)
 {
   register int c1, c2, run = -1;
   uint8_t *pos;
-  c1 = 0; /* avoid warning */
+  c1 = 0, c2 = 0; /* avoid warning */
   while (iof_ensure(O, 1+128+1))
   { /* ensured space for single length byte, up to 128 bytes to be copied, possible eod marker */
     pos = O->pos++;
@@ -1633,21 +1635,21 @@ int iof_filter_basexx_encoder_ln (iof *F, size_t line, size_t maxline)
 iof * iof_filter_base16_decoder (iof *N)
 {
   iof *I;
-  basexx_state *state;
-  I = iof_filter_reader(base16_decoder, sizeof(basexx_state), &state);
+  basexx_state_pointer P;
+  I = iof_filter_reader(base16_decoder, sizeof(basexx_state), &P.voidstate);
   iof_setup_next(I, N);
-  basexx_state_init(state);
-  state->flush = 1; // means N is supposed to be continuous input
+  basexx_state_init(P.basexxstate);
+  P.basexxstate->flush = 1; // means N is supposed to be continuous input
   return I;
 }
 
 iof * iof_filter_base16_encoder (iof *N)
 {
   iof *O;
-  basexx_state *state;
-  O = iof_filter_writer(base16_encoder, sizeof(basexx_state), &state);
+  basexx_state_pointer P;
+  O = iof_filter_writer(base16_encoder, sizeof(basexx_state), &P.voidstate);
   iof_setup_next(O, N);
-  basexx_state_init(state);
+  basexx_state_init(P.basexxstate);
   return O;
 }
 
@@ -1656,21 +1658,21 @@ iof * iof_filter_base16_encoder (iof *N)
 iof * iof_filter_base64_decoder (iof *N)
 {
   iof *I;
-  basexx_state *state;
-  I = iof_filter_reader(base64_decoder, sizeof(basexx_state), &state);
+  basexx_state_pointer P;
+  I = iof_filter_reader(base64_decoder, sizeof(basexx_state), &P.voidstate);
   iof_setup_next(I, N);
-  basexx_state_init(state);
-  state->flush = 1;
+  basexx_state_init(P.basexxstate);
+  P.basexxstate->flush = 1;
   return I;
 }
 
 iof * iof_filter_base64_encoder (iof *N)
 {
   iof *O;
-  basexx_state *state;
-  O = iof_filter_writer(base64_encoder, sizeof(basexx_state), &state);
+  basexx_state_pointer P;
+  O = iof_filter_writer(base64_encoder, sizeof(basexx_state), &P.voidstate);
   iof_setup_next(O, N);
-  basexx_state_init(state);
+  basexx_state_init(P.basexxstate);
   return O;
 }
 
@@ -1679,21 +1681,21 @@ iof * iof_filter_base64_encoder (iof *N)
 iof * iof_filter_base85_decoder (iof *N)
 {
   iof *I;
-  basexx_state *state;
-  I = iof_filter_reader(base85_decoder, sizeof(basexx_state), &state);
+  basexx_state_pointer P;
+  I = iof_filter_reader(base85_decoder, sizeof(basexx_state), &P.voidstate);
   iof_setup_next(I, N);
-  basexx_state_init(state);
-  state->flush = 1;
+  basexx_state_init(P.basexxstate);
+  P.basexxstate->flush = 1;
   return I;
 }
 
 iof * iof_filter_base85_encoder (iof *N)
 {
   iof *O;
-  basexx_state *state;
-  O = iof_filter_writer(base85_encoder, sizeof(basexx_state), &state);
+  basexx_state_pointer P;
+  O = iof_filter_writer(base85_encoder, sizeof(basexx_state), &P.voidstate);
   iof_setup_next(O, N);
-  basexx_state_init(state);
+  basexx_state_init(P.basexxstate);
   return O;
 }
 
@@ -1702,20 +1704,20 @@ iof * iof_filter_base85_encoder (iof *N)
 iof * iof_filter_runlength_decoder (iof *N)
 {
   iof *I;
-  runlength_state *state;
-  I = iof_filter_reader(runlength_decoder, sizeof(runlength_state), &state);
+  basexx_state_pointer P;
+  I = iof_filter_reader(runlength_decoder, sizeof(runlength_state), &P.voidstate);
   iof_setup_next(I, N);
-  runlength_state_init(state);
-  state->flush = 1;
+  runlength_state_init(P.runlengthstate);
+  P.runlengthstate->flush = 1;
   return I;
 }
 
 iof * iof_filter_runlength_encoder (iof *N)
 {
   iof *O;
-  runlength_state *state;
-  O = iof_filter_writer(runlength_encoder, sizeof(runlength_state), &state);
+  basexx_state_pointer P;
+  O = iof_filter_writer(runlength_encoder, sizeof(runlength_state), &P.voidstate);
   iof_setup_next(O, N);
-  runlength_state_init(state);
+  runlength_state_init(P.runlengthstate);
   return O;
 }

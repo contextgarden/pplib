@@ -27,4 +27,6 @@ struct aes_state {
   int flags;
 };
 
+typedef union { rc4_state *rc4state; aes_state *aesstate; void *voidstate; } crypt_state_pointer; // to avoid 'dereferencing type-puned ...' warnings
+
 #endif

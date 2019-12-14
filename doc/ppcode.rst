@@ -75,7 +75,12 @@ Sanity alignment adjustments in iof_heap.
 v2.02
 -----
 Fixed incorrect encoding of strings alterego with octal escaping, thanks Luigi.
-On Hans request added ppdoc_filehandle() function and ppdoc_file() macro for loading ppdoc from FILE *
+On Hans request added ppdoc_filehandle() function and ppdoc_file() macro for loading ppdoc from FILE *.
+
+v2.03
+-----
+Fixed alloc/free of ppdoc heap; ppdoc is now mallocated, no longer taken from its own heap. Again, thanks Luigi.
+Fixed warnings about dereferencing type-puned pointers and some others.
 
 TODO
 ====

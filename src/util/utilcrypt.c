@@ -996,32 +996,32 @@ static size_t aes_encoder (iof *F, iof_mode mode)
 iof * iof_filter_rc4_decoder (iof *N, const void *key, size_t keylength)
 {
   iof *I;
-  rc4_state *state;
+  crypt_state_pointer P;
 
-  I = iof_filter_reader(rc4_decoder, sizeof(rc4_state), &state);
+  I = iof_filter_reader(rc4_decoder, sizeof(rc4_state), &P.voidstate);
   iof_setup_next(I, N);
-  if (rc4_state_init(state, key, keylength) == NULL)
+  if (rc4_state_init(P.rc4state, key, keylength) == NULL)
   {
     iof_discard(I);
     return NULL;
   }
-  state->flush = 1;
+  P.rc4state->flush = 1;
   return I;
 }
 
 iof * iof_filter_rc4_encoder (iof *N, const void *key, size_t keylength)
 {
   iof *O;
-  rc4_state *state;
+  crypt_state_pointer P;
 
-  O = iof_filter_writer(rc4_encoder, sizeof(rc4_state), &state);
+  O = iof_filter_writer(rc4_encoder, sizeof(rc4_state), &P.voidstate);
   iof_setup_next(O, N);
-  if (rc4_state_init(state, key, keylength) == NULL)
+  if (rc4_state_init(P.rc4state, key, keylength) == NULL)
   {
     iof_discard(O);
     return NULL;
   }
-  // state->flush = 1;
+  // P.rc4state->flush = 1;
   return O;
 }
 
@@ -1030,34 +1030,34 @@ iof * iof_filter_rc4_encoder (iof *N, const void *key, size_t keylength)
 iof * iof_filter_aes_decoder (iof *N, const void *key, size_t keylength)
 {
   iof *I;
-  aes_state *state;
+  crypt_state_pointer P;
 
-  I = iof_filter_reader(aes_decoder, sizeof(aes_state), &state);
+  I = iof_filter_reader(aes_decoder, sizeof(aes_state), &P.voidstate);
   iof_setup_next(I, N);
-  if (aes_decode_init(state, key, keylength) == NULL)
+  if (aes_decode_init(P.aesstate, key, keylength) == NULL)
   {
     iof_discard(I);
     return NULL;
   }
-  aes_pdf_mode(state);
-  state->flush = 1;
+  aes_pdf_mode(P.aesstate);
+  P.aesstate->flush = 1;
   return I;
 }
 
 iof * iof_filter_aes_encoder (iof *N, const void *key, size_t keylength)
 {
   iof *O;
-  aes_state *state;
+  crypt_state_pointer P;
 
-  O = iof_filter_writer(aes_encoder, sizeof(aes_state), &state);
+  O = iof_filter_writer(aes_encoder, sizeof(aes_state), &P.voidstate);
   iof_setup_next(O, N);
-  if (aes_encode_init(state, key, keylength) == NULL)
+  if (aes_encode_init(P.aesstate, key, keylength) == NULL)
   {
     iof_discard(O);
     return NULL;
   }
-  aes_pdf_mode(state);
-  // state->flush = 1;
+  aes_pdf_mode(P.aesstate);
+  // P.aesstate->flush = 1;
   return O;
 }
 

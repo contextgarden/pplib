@@ -399,7 +399,7 @@ struct ghost64 {
 #endif
     void *block;
   };
-#if BIT32
+#ifdef BIT32
   uint8_t dummy[4]; // force 8
 #endif
 };

@@ -204,6 +204,8 @@ struct lzw_state {
   int flags;                          /* options */
 };
 
+typedef union { lzw_state *lzwstate; void *voidstate; } lzw_state_pointer; // to avoid 'dereferencing type-puned ...' warnings
+
 #define LZW_INIT_STATE { { 0 }, 0, { 0 }, 0, 0, 0, 0, 0, 0 }
 
 /* macros */
@@ -676,25 +678,25 @@ static size_t lzw_encoder (iof *F, iof_mode mode)
 iof * iof_filter_lzw_decoder (iof *N, int flags)
 {
   iof *I;
-  lzw_state *state;
-  I = iof_filter_reader(lzw_decoder, sizeof(lzw_state), &state);
+  lzw_state_pointer P;
+  I = iof_filter_reader(lzw_decoder, sizeof(lzw_state), &P.voidstate);
   iof_setup_next(I, N);
-  if (lzw_decoder_init(state, flags) == NULL)
+  if (lzw_decoder_init(P.lzwstate, flags) == NULL)
   {
     iof_discard(I);
     return NULL;
   }
-  state->flush = 1;
+  P.lzwstate->flush = 1;
   return I;
 }
 
 iof * iof_filter_lzw_encoder (iof *N, int flags)
 {
   iof *O;
-  lzw_state *state;
-  O = iof_filter_writer(lzw_encoder, sizeof(lzw_state), &state);
+  lzw_state_pointer P;
+  O = iof_filter_writer(lzw_encoder, sizeof(lzw_state), &P.voidstate);
   iof_setup_next(O, N);
-  if (lzw_encoder_init(state, flags) == NULL)
+  if (lzw_encoder_init(P.lzwstate, flags) == NULL)
   {
     iof_discard(O);
     return NULL;

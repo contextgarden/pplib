@@ -53,7 +53,7 @@ typedef struct iof_file {
 typedef struct iof iof;
 typedef size_t (*iof_handler) (iof *I, iof_mode mode);
 
-/* iof structure */
+/* iof structure; keep 8N bytes */
 
 #define IOF_MEMBERS \
   union { \
@@ -640,11 +640,6 @@ UTILAPI void iof_debug (iof *I, const char *filename);
 void iof_filters_init (void);
 void iof_filters_free (void);
 
-// no longer used
-//void * iof_filter_new (size_t size);
-
-// &((void *)pstate
-
 iof * iof_filter_reader_new (iof_handler handler, size_t statesize, void **pstate);
 #define iof_filter_reader(handler, statesize, pstate) iof_filter_reader_new(handler, statesize, (void **)(pstate))
 iof * iof_filter_reader_with_buffer_new (iof_handler handler, size_t statesize, void **pstate, void *buffer, size_t buffersize);
@@ -654,7 +649,7 @@ iof * iof_filter_writer_new (iof_handler handler, size_t statesize, void **pstat
 iof * iof_filter_writer_with_buffer_new (iof_handler handler, size_t statesize, void **pstate, void *buffer, size_t buffersize);
 #define iof_filter_writer_with_buffer(handler, statesize, pstate, buffer, buffersize) iof_filter_writer_with_buffer_new(handler, statesize, (void **)(pstate), buffer, buffersize)
 
-#define iof_filter_state(statetype, F) (statetype)((F) + 1)
+#define iof_filter_state(statetype, F) (statetype)((void *)((F) + 1))
 
 void iof_free (iof *F);
 void iof_discard (iof *F);

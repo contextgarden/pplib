@@ -92,6 +92,8 @@ struct predictor_state {
   int status;
 };
 
+typedef union { predictor_state *predictorstate; void *voidstate; } predictor_state_pointer; // to avoid 'dereferencing type-puned ...' warnings
+
 enum {
   STATUS_LAST = 0,
   STATUS_CONTINUE = 1 // any value different then IOFEOF, IOFERR, ... which are < 0
@@ -744,25 +746,25 @@ static size_t predictor_encoder (iof *F, iof_mode mode)
 iof * iof_filter_predictor_decoder (iof *N, int predictor, int rowsamples, int components, int compbits)
 {
   iof *I;
-  predictor_state *state;
-  I = iof_filter_reader(predictor_decoder, sizeof(predictor_state), &state);
+  predictor_state_pointer P;
+  I = iof_filter_reader(predictor_decoder, sizeof(predictor_state), &P.voidstate);
   iof_setup_next(I, N);
-  if (predictor_decoder_init(state, predictor, rowsamples, components, compbits) == NULL)
+  if (predictor_decoder_init(P.predictorstate, predictor, rowsamples, components, compbits) == NULL)
   {
     iof_discard(I);
     return NULL;
   }
-  state->flush = 1;
+  P.predictorstate->flush = 1;
   return I;
 }
 
 iof * iof_filter_predictor_encoder (iof *N, int predictor, int rowsamples, int components, int compbits)
 {
   iof *O;
-  predictor_state *state;
-  O = iof_filter_writer(predictor_encoder, sizeof(predictor_state), &state);
+  predictor_state_pointer P;
+  O = iof_filter_writer(predictor_encoder, sizeof(predictor_state), &P.voidstate);
   iof_setup_next(O, N);
-  if (predictor_encoder_init(state, predictor, rowsamples, components, compbits) == NULL)
+  if (predictor_encoder_init(P.predictorstate, predictor, rowsamples, components, compbits) == NULL)
   {
     iof_discard(O);
     return NULL;
