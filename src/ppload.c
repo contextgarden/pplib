@@ -1392,7 +1392,7 @@ static iof * ppdoc_reader (ppdoc *pdf, size_t offset, size_t length)
   iof *I;
   input = &pdf->input;
   I = &pdf->reader;
-  if (iof_file_seek(input, offset, SEEK_SET) != 0)
+  if (iof_file_seek(input, (long)offset, SEEK_SET) != 0)
     return NULL;
   I->flags &= ~IOF_STOPPED;
   if (input->flags & IOF_DATA)
@@ -2223,15 +2223,28 @@ static ppdoc * ppdoc_read (ppdoc *pdf, iof_file *input)
 
 static void ppdoc_pages_init (ppdoc *pdf);
 
-static ppdoc * ppdoc_create (iof_file *input)
-{
-  ppdoc *pdf;
-  ppheap heap;
+/*
+20191214: We used to allocate ppdoc, as all other structs, from the internal heap:
 
+  ppheap heap;
   ppheap_init(&heap);
   pdf = (ppdoc *)ppstruct_take(&heap, sizeof(ppdoc));
   pdf->heap = heap;
-  ppbytes_buffer_init(&pdf->heap); // init with final location, not local heap variable!
+  ppbytes_buffer_init(&pdf->heap);
+  ...
+
+So ppdoc pdf was allocated from the heap owned by the pdf itself. Somewhat tricky, but should work fine, 
+as from that point nothing refered to a local heap variable addres. For some reason that causes a crash
+on openbsd.
+*/
+
+static ppdoc * ppdoc_create (iof_file *input)
+{
+  ppdoc *pdf;
+
+  pdf = (ppdoc *)pp_malloc(sizeof(ppdoc));
+  ppheap_init(&pdf->heap);
+  ppbytes_buffer_init(&pdf->heap);
   ppstack_init(&pdf->stack, &pdf->heap);
   ppdoc_reader_init(pdf, input);
   ppdoc_pages_init(pdf);
@@ -2272,16 +2285,16 @@ ppdoc * ppdoc_mem (const void *data, size_t size)
 {
   iof_file input;
   iof_file_rdata_init(&input, data, size);
-  input.flags |= IOF_BUFFER_ALLOC; // todo: 3 modes: borrow, take over, copy?
+  input.flags |= IOF_BUFFER_ALLOC;
   return ppdoc_create(&input);
 }
 
 void ppdoc_free (ppdoc *pdf)
 {
-  //iof_file_free(&pdf->input);
   iof_file_decref(&pdf->input);
   ppstack_free_buffer(&pdf->stack);
-  ppheap_free(&pdf->heap); // last, invalidates pdf!
+  ppheap_free(&pdf->heap);
+  pp_free(pdf);
 }
 
 ppcrypt_status ppdoc_crypt_status (ppdoc *pdf)
@@ -2511,7 +2524,7 @@ ppref * ppdoc_next_page (ppdoc *pdf)
 ppcontext * ppcontext_new (void)
 {
   ppcontext *context;
-  context = (ppcontext *)pp_malloc(sizeof(ppcontext)); // better not from its own heap, for simpler renew
+  context = (ppcontext *)pp_malloc(sizeof(ppcontext));
   ppheap_init(&context->heap);
   ppbytes_buffer_init(&context->heap);
   ppstack_init(&context->stack, &context->heap);
