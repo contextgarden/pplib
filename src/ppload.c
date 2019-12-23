@@ -2436,7 +2436,7 @@ static void ppdoc_pages_init (ppdoc *pdf)
 {
   pppages *pages;
   pages = &pdf->pages;
-  pages->root = pages->parent = pages->buffer;
+  pages->root = pages->parent = &pages->buffer[0];
   pages->depth = 0;
   pages->space = PPPAGES_STACK_DEPTH;
 }
@@ -2467,11 +2467,14 @@ static ppref * ppdoc_pages_group_first (ppdoc *pdf, ppref *ref)
   pparray *kids;
   ppuint count;
   ppname *type;
+  ppobj *o;
 
   dict = ref->object.dict; // typecheck made by callers
   while ((kids = pppage_node(dict, &count, &type)) != NULL)
   {
-    if ((ref = pparray_get_ref(kids, 0)) == NULL || ref->object.type != PPDICT)
+    if ((o = pparray_get_obj(kids, 0)) == NULL) // empty /Kids
+      return ppdoc_next_page(pdf);
+    if ((ref = ppobj_get_ref(o)) == NULL || ref->object.type != PPDICT)
       return NULL;
     pppages_push(pdf, kids);
     dict = ref->object.dict;
