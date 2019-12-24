@@ -417,6 +417,7 @@ ppstring * ppstring_internal (const void *data, size_t size, ppheap *heap)
   iof *O;
   O = ppbytes_buffer(heap, size);
   memcpy(O->buf, data, size);
+  O->pos = O->buf + size;
   return ppstring_buffer(O, heap);
 }
 
