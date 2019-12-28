@@ -88,6 +88,7 @@ Byte lookups for names/strings loaders are now int8_t, as char might be signed.
 ppdoc_first_page() / ppdoc_next_page() iterator now handles a case when /Kids array is empty.
 Fixed generating keys for encrypted streams; ppstring_internal() returns the string of the proper size.
 More stream tests in pptest3.c.
+Some rework on md5 and sha2.
 
 TODO
 ====
