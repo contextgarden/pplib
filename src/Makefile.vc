@@ -4,6 +4,20 @@ LN=link /nologo
 AR=lib /nologo # LIB variable has a special meaning for msvc
 
 CFLAGS=/W3 /D_CRT_SECURE_NO_DEPRECATE /O2
+
+# hans
+# 5045: spectre
+# 4820: local vars with same name as outer variable
+# 4456: local vars with same name as outer variable
+# 4457: local vars with same function parameter
+# 4668: missing defines
+# 4244: assignment in conditional expression
+# 4127: constant conditional expression
+# 4131: old style declarator
+# 4464: relative include path
+# /Wall /wd5045 /wd4820 /wd4456 /wd4457 /wd4668 /wd4244 /wd4127 /wd4131 /wd4464
+
+
 #LFLAGS = /NODEFAULTLIB:LIBCMT # produces binary dependent from redistributable
 LFLAGS = /NOIMPLIB
 
