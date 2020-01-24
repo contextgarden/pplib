@@ -553,9 +553,9 @@ char * uint64_as_alpha (uint64_t number, int uc, char ibuf[MAX_INTEGER_DIGITS], 
 #define string_scan_alphan(s, c, number, radix) \
   do { \
     number = 0; \
-    if ((c = base26_value(*s)) > 0) { \
+    if ((c = (uint16_t)base26_value(*s)) > 0) { \
       number = c; \
-      while (c == base26_value(*++s)) number += radix; \
+      while (c == (uint16_t)base26_value(*++s)) number += radix; \
     }  \
   } while (0)
 
