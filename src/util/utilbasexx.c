@@ -1189,7 +1189,7 @@ iof_status runlength_encode (iof *I, iof *O)
         if ((c1 = iof_get(I)) < 0)
           return (*pos = 128, IOFEOF);
         run = 0;
-        FALLTHRU(); // fall through
+        FALLTHRU // fall through
       case 0: /* `repeat' state; get another byte and compare */
         if ((c2 = iof_get(I)) < 0)
           return (*pos = 0, iof_set2(O, c1, 128), IOFEOF);
@@ -1233,7 +1233,7 @@ iof_status runlength_encode_state (iof *I, iof *O, runlength_state *state)
         if ((state->c1 = iof_get(I)) < 0)
           return (state->flush ? (*state->pos = 128, IOFEOF) : IOFEMPTY);
         state->run = 0;
-        FALLTHRU(); // fall through
+        FALLTHRU // fall through
       case 0: /* `repeat' state; get another byte and compare */
         if ((state->c2 = iof_get(I)) < 0)
           return (state->flush ? (*state->pos = 0, iof_set2(O, state->c1, 128), IOFEOF) : IOFEMPTY);
@@ -1418,7 +1418,7 @@ static size_t base16_encoder (iof *F, iof_mode mode)
   {
     case IOFFLUSH:
       state->flush = 1;
-      FALLTHRU(); // fall through
+      FALLTHRU // fall through
     case IOFWRITE:
       F->end = F->pos;
       F->pos = F->buf;
@@ -1478,7 +1478,7 @@ static size_t base64_encoder (iof *F, iof_mode mode)
   {
     case IOFFLUSH:
       state->flush = 1;
-      FALLTHRU(); // fall through
+      FALLTHRU // fall through
     case IOFWRITE:
       F->end = F->pos;
       F->pos = F->buf;
@@ -1538,7 +1538,7 @@ static size_t base85_encoder (iof *F, iof_mode mode)
   {
     case IOFFLUSH:
       state->flush = 1;
-      FALLTHRU(); // fall through
+      FALLTHRU // fall through
     case IOFWRITE:
       F->end = F->pos;
       F->pos = F->buf;
@@ -1598,7 +1598,7 @@ static size_t runlength_encoder (iof *F, iof_mode mode)
   {
     case IOFFLUSH:
       state->flush = 1;
-      FALLTHRU(); // fall through
+      FALLTHRU // fall through
     case IOFWRITE:
       F->end = F->pos;
       F->pos = F->buf;

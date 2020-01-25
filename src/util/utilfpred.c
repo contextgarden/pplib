@@ -725,7 +725,7 @@ static size_t predictor_encoder (iof *F, iof_mode mode)
   {
     case IOFFLUSH:
       state->flush = 1;
-      FALLTHRU(); // fall through
+      FALLTHRU // fall through
     case IOFWRITE:
       F->end = F->pos;
       F->pos = F->buf;
