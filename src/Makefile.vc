@@ -21,7 +21,7 @@ CFLAGS=/W3 /D_CRT_SECURE_NO_DEPRECATE /O2
 # 4706: assignment in conditionals
 
 #WFLAGS= /W3 /D_CRT_SECURE_NO_DEPRECATE
-WFLAGS= /Wall /D_CRT_SECURE_NO_DEPRECATE /wd5045 /wd4820 /wd4456 /wd4457 /wd4668 /wd4244 /wd4127 /wd4131 /wd4464 /wd4201 /wd4710 /wd4711 /wd4706
+WFLAGS= /Wall /D_CRT_SECURE_NO_DEPRECATE /wd5045 /wd4820 /wd4456 /wd4457 /wd4668 /wd4244 /wd4127 /wd4131 /wd4464 /wd4201 /wd4710 /wd4711
 CFLAGS= $(WFLAGS) /O2
 
 #LFLAGS = /NODEFAULTLIB:LIBCMT # produces binary dependent from redistributable

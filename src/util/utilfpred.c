@@ -258,9 +258,14 @@ static int read_scanline (predictor_state *state, iof *I, int size)
 
 #define left_pixel_component(state) (state->prevcomp[state->compindex]) // tiff predictor with 2, 4, 8, 16 components
 #define left_pixel_value(state) (state->prevpixel[0])                   // tiff predictor with 1bit components
+
+/* assignment in conditional
 #define save_pixel_component(state, c) ((void)\
   ((state->prevcomp[state->compindex] = (predictor_component_t)(c)), \
   ++state->compindex, (state->compindex < state->components || (state->compindex = 0))))
+*/
+#define save_pixel_component(state, c) \
+  do { state->prevcomp[state->compindex] = (predictor_component_t)(c); if (++state->compindex >= state->components) state->compindex = 0; } while (0)
 
 #define save_pixel_value(state, c) (state->prevpixel[0] = (predictor_pixel1b_t)(c))
 
