@@ -8,6 +8,11 @@
 #include "utillog.h"
 #include "utiliof.h"
 
+#ifdef _WIN32 /* --ak */
+FILE *ppu8open(const char *filename, const char *mode);
+#define fopen ppu8open
+#endif /* _WIN32 --ak */
+
 /* commons */
 
 void * iof_copy_data (const void *data, size_t size)
@@ -2969,25 +2974,87 @@ iof * iof_filter_reader_replacement (iof *P, iof_handler handler, size_t statesi
   return F;
 }
 
+#ifdef _WIN32 /* --ak */
+#include <malloc.h>
+#include <sys/stat.h>
+#include <wchar.h>
+#include <windows.h>
+/*
+  Get wide string from multibyte string. (by T. Tanaka)
+*/
+static wchar_t *
+get_wstring_from_mbstring(int cp, const char *mbstr, wchar_t *wstr)
+{
+  int len;
 
+  len = MultiByteToWideChar(cp, 0, mbstr, -1, wstr, 0);
+  if (len==0) {
+    return NULL;
+  }
+  if (wstr==NULL) {
+    wstr = malloc(sizeof(wchar_t)*(len+1));
+  }
+  len = MultiByteToWideChar(cp, 0, mbstr, -1, wstr, len+1);
+  if (len==0) {
+    return NULL;
+  }
+  return wstr;
+}
 
+FILE *ppu8open(const char *filename, const char *mode)
+{
+  wchar_t *wfilename, *wmode;
+  FILE *ret;
+  int  cp;
+  unsigned char *fnn;
+  unsigned char *p;
+  size_t len = strlen(filename);
 
+  fnn = malloc(len + 10);
+  p = strstr(filename, ".\\");
+  if (!p) {
+     p = strstr(filename, "./");
+  }
+  if (!p && len > 2) {
+     p = strstr(filename + 2, "//");
+  }
+  if (!p && len > 2) {
+     p = strstr(filename + 2, "\\\\");
+  }
+  if (!p && len > 2) {
+     p = strstr(filename + 2, "\\/");
+  }
+  if (!p && len > 2) {
+     p = strstr(filename + 2, "/\\");
+  }
+  if (!p && len > 2 && ((filename[0] == '/' && filename[1] == '/') ||
+      (filename[0] == '\\' && filename[1] == '\\' &&
+       filename[2] != '?'))) {
+     filename += 2;
+     strcpy (fnn, "\\\\?\\UNC\\");
+     strcat (fnn, filename);
+  } else if (!p && len > 2 && filename[1] == ':') {
+     strcpy (fnn, "\\\\?\\");
+     strcat (fnn, filename);
+  } else {
+     strcpy (fnn, filename);
+  }
+  for (p = fnn; *p; p++) {
+    if (*p == '/')
+       *p = '\\';
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  cp = CP_UTF8;
+  wfilename = get_wstring_from_mbstring(cp, fnn, wfilename=NULL);
+  free(fnn);
+  if (wfilename == NULL)
+    return NULL;
+  wmode = get_wstring_from_mbstring(cp, mode, wmode=NULL);
+  if (wmode == NULL)
+    return NULL;
+  ret = _wfopen((const wchar_t *)wfilename, (const wchar_t *)wmode);
+  free(wfilename);
+  free(wmode);
+  return ret;
+}
+#endif /* _WIN32 --ak */

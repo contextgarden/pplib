@@ -36,6 +36,10 @@ static void log_callback (const char *message, void *alien)
   fprintf((FILE *)alien, "\nooops: %s\n", message);
 }
 
+#ifdef _WIN32 /* --ak */
+#include <fcntl.h>
+#endif /* _WIN32 --ak */
+
 int main (int argc, const char **argv)
 {
   const char *filepath;
@@ -53,6 +57,10 @@ int main (int argc, const char **argv)
   ppobj *obj;
   ppname *op;
   size_t operators;
+
+#ifdef _WIN32 /* --ak */
+  _setmode(fileno(stdout), _O_BINARY);
+#endif /* _WIN32 --ak */
 
   if (argc < 2)
     return usage(argv[0]);

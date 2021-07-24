@@ -61,6 +61,10 @@ static int usage (const char *argv0)
   return 0;
 }
 
+#ifdef _WIN32 /* --ak */
+#include <fcntl.h>
+#endif /* _WIN32 --ak */
+
 int main (int argc, const char **argv)
 {
   const char *filepath;
@@ -68,6 +72,10 @@ int main (int argc, const char **argv)
   ppdoc *pdf;
   const void *data;
   size_t size;
+
+#ifdef _WIN32 /* --ak */
+  _setmode(fileno(stdout), _O_BINARY);
+#endif /* _WIN32 --ak */
 
   if (argc < 2)
     return usage(argv[0]);

@@ -38,6 +38,11 @@
 //#include <assert.h> /* assert() */
 #include "utilsha.h"
 
+#ifdef _WIN32 /* --ak */
+extern FILE *ppu8open(const char *filename, const char *mode);
+#define fopen ppu8open
+#endif /* _WIN32 --ak */
+
 /*
  * UNROLLED TRANSFORM LOOP NOTE:
  * You can define SHA2_UNROLL_TRANSFORM to use the unrolled transform
