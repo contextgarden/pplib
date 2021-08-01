@@ -2975,7 +2975,6 @@ iof * iof_filter_reader_replacement (iof *P, iof_handler handler, size_t statesi
 }
 
 #ifdef _WIN32 /* --ak */
-#include <malloc.h>
 #include <sys/stat.h>
 #include <wchar.h>
 #include <windows.h>
@@ -2992,7 +2991,7 @@ get_wstring_from_mbstring(int cp, const char *mbstr, wchar_t *wstr)
     return NULL;
   }
   if (wstr==NULL) {
-    wstr = util_malloc(sizeof(wchar_t)*(len+1));
+    wstr = (wchar_t *)util_malloc(sizeof(wchar_t)*(len+1));
   }
   len = MultiByteToWideChar(cp, 0, mbstr, -1, wstr, len+1);
   if (len==0) {
@@ -3010,7 +3009,7 @@ FILE *ppu8open(const char *filename, const char *mode)
   unsigned char *p;
   size_t len = strlen(filename);
 
-  fnn = util_malloc(len + 10);
+  fnn = (unsigned char *)util_malloc(len + 10);
   p = strstr(filename, ".\\");
   if (!p) {
      p = strstr(filename, "./");
