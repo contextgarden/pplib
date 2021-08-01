@@ -1,6 +1,11 @@
 
 #include "pplib.h"
 
+#ifdef _WIN32 /* --ak */
+extern FILE *ppu8open(const char *filename, const char *mode);
+#define fopen ppu8open
+#endif /* _WIN32 --ak */
+
 const char * ppobj_kind[] = { "none", "null", "bool", "integer", "number", "name", "string", "array", "dict", "stream", "ref" };
 
 #define ignored_char(c) (c == 0x20 || c == 0x0A || c == 0x0D || c == 0x09 || c == 0x00)

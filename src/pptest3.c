@@ -76,6 +76,10 @@ static void check_stream_chunks (ppstream *stream)
 
 #define USE_BUFFERS_POOL 1
 
+#ifdef _WIN32 /* --ak */
+#include <fcntl.h>
+#endif /* _WIN32 --ak */
+
 int main (int argc, const char **argv)
 {
   const char *filepath;
@@ -86,6 +90,10 @@ int main (int argc, const char **argv)
   size_t xi;
   ppuint refnum;
   ppref *ref;
+
+#ifdef _WIN32 /* --ak */
+  _setmode(fileno(stdout), _O_BINARY);
+#endif /* _WIN32 --ak */
 
   if (argc < 2)
     return usage(argv[0]);

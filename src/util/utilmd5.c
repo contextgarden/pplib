@@ -61,6 +61,11 @@
 
 #include "utilmd5.h"
 
+#ifdef _WIN32 /* --ak */
+extern FILE *ppu8open(const char *filename, const char *mode);
+#define fopen ppu8open
+#endif /* _WIN32 --ak */
+
 #undef BYTE_ORDER /* 1 = big-endian, -1 = little-endian, 0 = unknown */
 #ifdef ARCH_IS_BIG_ENDIAN
 #  define BYTE_ORDER (ARCH_IS_BIG_ENDIAN ? 1 : -1)
