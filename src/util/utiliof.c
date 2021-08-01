@@ -2992,7 +2992,7 @@ get_wstring_from_mbstring(int cp, const char *mbstr, wchar_t *wstr)
     return NULL;
   }
   if (wstr==NULL) {
-    wstr = malloc(sizeof(wchar_t)*(len+1));
+    wstr = util_malloc(sizeof(wchar_t)*(len+1));
   }
   len = MultiByteToWideChar(cp, 0, mbstr, -1, wstr, len+1);
   if (len==0) {
@@ -3010,7 +3010,7 @@ FILE *ppu8open(const char *filename, const char *mode)
   unsigned char *p;
   size_t len = strlen(filename);
 
-  fnn = malloc(len + 10);
+  fnn = util_malloc(len + 10);
   p = strstr(filename, ".\\");
   if (!p) {
      p = strstr(filename, "./");
@@ -3050,8 +3050,10 @@ FILE *ppu8open(const char *filename, const char *mode)
   if (wfilename == NULL)
     return NULL;
   wmode = get_wstring_from_mbstring(cp, mode, wmode=NULL);
-  if (wmode == NULL)
+  if (wmode == NULL) {
+    free(wfilename);
     return NULL;
+  }
   ret = _wfopen((const wchar_t *)wfilename, (const wchar_t *)wmode);
   free(wfilename);
   free(wmode);
